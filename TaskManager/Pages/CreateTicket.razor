@@ -1,0 +1,1962 @@
+﻿@page "/"
+@using System.Web
+@using Microsoft.AspNetCore.Http
+@using System.Text.RegularExpressions
+@using Newtonsoft.Json
+@using System.Text
+@using Newtonsoft.Json.Linq
+@using Shared.Modals
+@using System.Security.Cryptography
+@using Microsoft.AspNetCore.Components.WebAssembly.Hosting
+@inject HttpClient Http
+@inject NavigationManager UriHelper
+@inject NavigationManager MyNavigationManager
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject IWebAssemblyHostEnvironment HostEnvironment
+
+<h3>Create TimeLog Projects</h3>
+@*<h3>Create TimeLog Projects & DevOps Work Items</h3>*@
+<hr />
+
+@* TODO: Consider using flexbox or grid instead of tables. *@
+<div class="row">
+    <div class="column">
+        <table>
+            <tr>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Authorize with TimeLog"> </RadzenLabel> <br />
+                </td>
+                <td>
+                    <RadzenButton id="freshdeskSearch" Click=@(args => BtnTimeLog())>Authorize TimeLog</RadzenButton>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Search for Freshdesk ticket using ID"> </RadzenLabel> <br />
+                    <RadzenNumeric ShowUpDown="true" title="Ticket Id" TValue="int?" @bind-Value=@inputFreshdeskID Placeholder="Enter ticket ID" Min="0" Class="w-100" />
+                </td>
+                <td>
+                    <br>
+                    <RadzenButton id="freshdeskSearch" Disabled="@freshdeskSearchDisabled" Click=@(args => BtnSearchFreshdeskTicket())>Search Freshdesk</RadzenButton>
+                </td>
+                <td>
+                    <img id="spinner" style="@($"visibility: {spinnerFSearchVisibility}")" src="/loading-spinner.png" />
+                </td>
+            </tr>
+            @*<tr>
+            <td>
+            <RadzenLabel id="switchLabel" class="createSwitch" Text="Create new Freshdesk ticket"></RadzenLabel>
+            </td>
+            <td>
+            <RadzenSwitch @bind-Value=@createFreshdesk Change=@(args => OnChangeFreshdeskSwitch(args)) />
+            <img id="spinner" style="@($"visibility: {spinnerVisibilityFreshdesk}")" src="/loading-spinner.png" />
+            </td>
+            </tr>*@
+            @*Create Freshdesk Ticket*@
+            @*<tr Style="@($"display: {freshdeskVisibilityTable}")">
+            <td>
+            <RadzenLabel id="createLabel" Text="Search for company" Style="@($"display: {freshdeskVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenTextBox title="Enter company name" Placeholder="Enter company name..." Value=@freshdeskSearchTerm Change=@(args => SearchTermChanged(args))
+            Style="@($"display: {freshdeskVisibility}")" Class="w-100"></RadzenTextBox>
+            </td>
+            <td>
+            <br />
+            <RadzenButton id="freshdeskSearch" Click=@(args => searchCompany()) Style="@($"display: {freshdeskVisibility}")">Search</RadzenButton>
+            </td>
+            </tr>*@
+            @*<tr Style="@($"display: {freshdeskVisibilityTable}")">
+            <td>
+            <RadzenLabel id="createLabel" Text="Company" Style="@($"display: {freshdeskVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue=FreshdeskCompany FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" @bind-Value=@selectedFreshdeskCompany
+            FilterOperator="StringFilterOperator.Contains" AllowFiltering="true" Placeholder="Select Company..." Change=@(args => GetFreshdeskContacts(args))
+            Data=@freshdeskCompanies.Distinct() TextProperty="name" Style="@($"display: {freshdeskVisibility}")" />
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="Contact" Style="@($"display: {freshdeskVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue=FreshdeskContact FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" @bind-Value=@selectedFreshdeskContact
+            FilterOperator="StringFilterOperator.Contains" AllowFiltering="true" Data=@freshdeskContacts.Distinct() TextProperty="name" Placeholder="Select Contact..."
+            Style="@($"display: {freshdeskVisibility}")" />
+            </td>
+            </tr>
+            <tr class="align-top" Style="@($"display: {freshdeskVisibilityTable}")">
+            <td>
+            <RadzenLabel id="createLabel" Text="Subject*" Style="@($"display: {freshdeskVisibility};")"></RadzenLabel>
+            <br />
+            <RadzenTextBox title="Subject" Placeholder="Required" @bind-Value=@freshdeskSubject Style="@($"display: {freshdeskVisibility};")" Class="w-100"></RadzenTextBox>
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="Description*" Style="@($"display: {freshdeskVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenTextArea title="Description" @bind-Value=@freshdeskDescription Placeholder="Required"
+            Style="@($"display: {freshdeskVisibility}")" Class="w-100"></RadzenTextArea>
+            </td>
+            </tr>
+            <tr Style="@($"display: {freshdeskVisibilityTable}")">
+            <td>
+            <RadzenLabel id="createLabel" Text="Status*" Style="@($"display: {freshdeskVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" Value=@freshdeskSelectedStatus Change=@(args => freshdeskStatusChanged(args))
+            Data=@freshdeskStatus Style="@($"display: {freshdeskVisibility}")" />
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="Priority*" Style="@($"display: {freshdeskVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" Value=@freshdeskSelectedPriority Change=@(args => freshdeskPriorityChanged(args))
+            Data=@freshdeskPriority Style="@($"display: {freshdeskVisibility}")" />
+            </td>
+            </tr>
+            <tr Style="@($"display: {freshdeskVisibilityTable}")">
+            <td colspan=3>
+            <hr />
+            </td>
+            </tr>*@
+            @*/Create Freshdesk Ticket*@
+            @*Create TimeLog project*@
+            <tr>
+                <td>
+                    <RadzenLabel id="switchLabel" class="createSwitch" Text="Create TimeLog project"></RadzenLabel>
+                </td>
+                <td>
+                    <RadzenSwitch @bind-Value=@createTimeLog Change=@(args => OnChangeTimeLogSwitch(args)) />
+                    <img id="spinner" style="@($"visibility: {spinnerVisibilityTimeLog}")" src="/loading-spinner.png" />
+                </td>
+            </tr>
+            <tr Style="@($"display: {timeLogVisibilityRow}")">
+                <td colspan=2>
+                    <RadzenLabel id="createLabel" Text="Project name*" Style="@($"display: {timeLogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox @bind-Value=@timelogProjectName id="longTextBox" Placeholder="Required" Style="@($"display: {timeLogVisibility}")"></RadzenTextBox>
+                </td>
+            </tr>
+            <tr Style="@($"display: {timeLogVisibilityRow}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Customer*" Style="@($"display: {timeLogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown AllowClear="false" TValue=TimeLogCustomer.Entity AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" Placeholder="Select..." Data=@timeLogCustomers @bind-Value=@timeLogCustomer TextProperty="properties.Name" Style="@($"display: {timeLogVisibility}")"></RadzenDropDown>
+                </td>
+                @*<td>
+                <RadzenLabel id="createLabel" Text="Contact" Style="@($"display: {timeLogVisibility}")"></RadzenLabel>
+                <br />
+                <RadzenDropDown AllowClear="false" TValue=TimeLogCustomer.Entity AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" Placeholder="Select..." Data=@timeLogCustomers @bind-Value=@timeLogCustomer TextProperty="properties.Name" Style="@($"display: {timeLogVisibility}")"></RadzenDropDown>
+                </td>*@
+            </tr>
+            <tr Style="@($"display: {timeLogVisibilityRow}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Project template*" Style="@($"display: {timeLogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown AllowClear="false" TValue=ProjectTemplates.Entity AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" Placeholder="Select..." Data=@timelogProjectTemplates @bind-Value=@timelogProjectTemplate TextProperty="properties.ProjectTemplateName" Style="@($"display: {timeLogVisibility}")"></RadzenDropDown>
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Project manager*" Style="@($"display: {timeLogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown AllowClear="false" TValue=TimeLogUser.Entity FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" AllowFiltering="true" Placeholder="Select..." TextProperty="properties.Initials" Data=@timeLogProjectManagers.GroupBy(pm => pm.properties?.Initials?.ToUpper()).Select(g => g.First()).ToList() @bind-Value=@timeLogProjectManager Style="@($"display: {timeLogVisibility}")"> <Template> @((context as TimeLogUser.Entity)?.properties?.Initials + " (" + (context as TimeLogUser.Entity)?.properties?.FirstName + " " + (context as TimeLogUser.Entity)?.properties?.LastName + ")") </Template> </RadzenDropDown>
+                </td>
+            </tr>
+            <tr Style="@($"display: {timeLogVisibilityRow}")">
+                @*<td>
+                <RadzenLabel id="createLabel" Text="Account Manager" Style="@($"display: {timeLogVisibility}")"></RadzenLabel>
+                <br />
+                <RadzenDropDown AllowClear="true" TValue=TimeLogUser.Entity FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" AllowFiltering="true" Placeholder="Select..." TextProperty="properties.Initials" Data=@timeLogProjectAccountManagers.GroupBy(pm => pm.properties.Initials.ToUpper()).Select(g => g.First()).ToList() @bind-Value=@timeLogProjectAccountManager Style="@($"display: {timeLogVisibility}")"><Template> @((context as TimeLogUser.Entity).properties.Initials + " (" + (context as TimeLogUser.Entity).properties.FirstName + " " + (context as TimeLogUser.Entity).properties.LastName + ")") </Template></RadzenDropDown>
+                </td>*@
+            </tr>
+            <tr Style="@($"display: {timeLogVisibilityRow}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Project category*" Style="@($"display: {timeLogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown AllowClear="false" TValue=ProjectCategories.Entity AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" Placeholder="Select..." Data=@timeLogProjectCategories @bind-Value=@timeLogProjectCategory TextProperty="properties.Name" Style="@($"display: {timeLogVisibility}")"></RadzenDropDown>
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Project type*" Style="@($"display: {timeLogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown AllowClear="false" TValue=ProjectTypes.Entity AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" Placeholder="Select..." Data=@timeLogProjectTypes @bind-Value=@timeLogProjectType TextProperty="properties.Name" Style="@($"display: {timeLogVisibility}")"></RadzenDropDown>
+                </td>
+            </tr>
+            <tr Style="@($"display: {timeLogVisibilityRow}")">
+                <td colspan=2>
+                    <RadzenLabel id="createLabel" Text="Project description" Style="@($"display: {timeLogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenTextArea title="Description" @bind-Value=@timelogProjectDescription id="taDevOpsReproSteps"
+                                    Style="@($"display: {timeLogVisibility}")" Class="w-100"></RadzenTextArea>
+                </td>
+            </tr>
+            <tr Style="@($"display: {timeLogVisibilityRow}")">
+                <td>
+                    <RadzenButton id="createButton" Disabled=@createTimeLogButtonDisabled Click=@(args => BtnCreateTimeLogProject()) Style="@($"display: {timeLogVisibility}")">Create TimeLog Project</RadzenButton>
+                </td>
+                <td>
+                    <img id="spinnerCreateBtn" style="@($"visibility: {spinnerVisibilityCreateTimeLog}")" src="/loading-spinner.png" />
+                </td>
+            </tr>
+            <tr Style="@($"display: {timeLogVisibilityRow}")">
+                <td colspan=3>
+                    <hr />
+                </td>
+            </tr>
+            @*/TimeLogProject*@
+            <tr>
+                <td>
+                    <RadzenLabel id="switchLabel" hidden="hidden" class="createSwitch" Text="Create DevOps work item"></RadzenLabel>
+                </td>
+                <td>
+                    <RadzenSwitch @bind-Value=@createDevOps hidden="hidden" Change=@(args => OnChangeDevOpsSwitch(args)) />
+                </td>
+            </tr>
+            <tr Style="@($"display: {devOpsVisibilityTable}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Product*" Style="@($"display: {devOpsWorkItemVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false" Disabled="true"
+                                    Placeholder="Select..." Data=@customerProductDropdown @bind-Value=@customerProductDropdownValue
+                                    Change=@(args => devOpsProductChange(args)) Style="@($"display: {devOpsWorkItemVisibility}")" />
+                </td>
+            </tr>
+            <tr Style="@($"display: {devOpsVisibilityTable}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Title*" Style="@($"display: {devOpsWorkItemVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox title="Title" @bind-Value=@devOpsWorkItemTitle Style="@($"display: {devOpsWorkItemVisibility}")" Class="w-100"></RadzenTextBox>
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Type*" Style="@($"display: {devOpsWorkItemVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false"
+                                    Placeholder="Select..." Data=@devOpsWorkItemTypes @bind-Value=@devOpsWorkItemTypesValue Style="@($"display: {devOpsWorkItemVisibility}")"
+                                    Change=@(args => devOpsDropdownChange(args)) />
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Assigned to" Style="@($"display: {devOpsWorkItemVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="true" TValue="DevOpsTeamMembers.Value" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains"
+                                    Placeholder="Select..." Data=@devOpsWorkItemAssignedTo @bind-Value=@devOpsWorkItemAssignedToValue Style="@($"display: {devOpsWorkItemVisibility}")" TextProperty="identity.displayName" />
+                </td>
+            </tr>
+            @*<tr Style="@($"display: {devOpsA2UVisibilityTableBug}")">
+            <td class="align-top">
+            <RadzenLabel id="createLabel" Text="Iteration" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false"
+            Placeholder="Select..." Data=@devOpsBugIterations TextProperty="devOpsBugIterationsText"
+            ValueProperty="devOpsBugIterationsValue" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")" />
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="Repro Steps" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenTextArea title="Repro Steps" @bind-Value=@devOpsWorkItemReproSteps id="taDevOpsReproSteps"
+            Style="@($"display: {devOpsA2UWorkItemBugVisibility}")" Class="w-100"></RadzenTextArea>
+            </td>
+            </tr>
+            <tr Style="@($"display: {devOpsA2UVisibilityTableBug}")">
+            <td>
+            <RadzenLabel id="createLabel" Text="Priority*" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false"
+            Placeholder="Select..." Data=@devOpsPriority TextProperty="devOpsPriorityText"
+            ValueProperty="devOpsPriorityValueP" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")" />
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="Severity*" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false"
+            Placeholder="Select..." Data=@devOpsSeverityValue TextProperty="devOpsSeverityText"
+            ValueProperty="devOpsSeverityValueP" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")" />
+            </td>
+            </tr>
+            <tr Style="@($"display: {devOpsA2UVisibilityTableBug}")">
+            <td>
+            <RadzenLabel id="createLabel" Text="Activity" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenDropDown id="dropdownCreator" title="Activity" AllowClear="false" TValue=string FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" @bind-Value=@devOpsBugActivity
+            FilterOperator="StringFilterOperator.Contains" AllowFiltering="true" Placeholder="Select..." Data=@devOpsBugActivities Style="@($"display: {devOpsA2UWorkItemBugVisibility}")" />
+
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="BUG category*" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false"
+            Placeholder="Select..." Data=@devOpsBugCategory TextProperty="devOpsWorkItemBugCategoryText"
+            ValueProperty="devOpsWorkItemBugCategoryValue" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")" />
+            </td>
+            </tr>
+            <tr Style="@($"display: {devOpsA2UVisibilityTableBug}")">
+            <td>
+            <RadzenLabel id="createLabel" Text="Found in Build*" Style="@($"display: {devOpsA2UWorkItemBugVisibility}")"></RadzenLabel>
+            <br />
+            <RadzenTextBox title="Found in Build" @bind-Value=@devOpsWorkItemFoundInBuild
+            Style="@($"display: {devOpsA2UWorkItemBugVisibility}")" Class="w-100"></RadzenTextBox>
+            </td>
+            </tr>
+            <tr Style="@($"display: {devOpsWMSVisibilityTableBug}")">
+                <td class="align-top">
+                    <RadzenLabel id="createLabel" Text="Iteration" Style="@($"display: {devOpsWMSWorkItemBugVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="true" TValue="string" AllowFiltering="false"
+                                    Placeholder="Select..." Data=@devOpsWMSBugIterations @bind-Value=@devOpsWMSBugIteration Style="@($"display: {devOpsWMSWorkItemBugVisibility}")" />
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="TimeLog project*" Style="@($"display: {devOpsWMSWorkItemBugVisibility}")"></RadzenLabel><br />
+                    <RadzenTextBox title="TimeLog project" @bind-Value=@devOpsWMSWorkItemTimeLogProject Style="@($"display: {devOpsWMSWorkItemBugVisibility}")" Class="w-100"></RadzenTextBox>
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Company*" Style="@($"display: {devOpsWMSWorkItemBugVisibility}")"></RadzenLabel> <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue=string FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" @bind-Value=@devOpsWMSWorkItemCustomer
+                                    FilterOperator="StringFilterOperator.Contains" AllowFiltering="true" Placeholder="Select..."
+                                    Data=@devOpsWMSWorkItemCustomers Style="@($"display: {devOpsWMSWorkItemBugVisibility}")" />
+                </td>
+            </tr>
+            <tr Style="@($"display: {devOpsWMSVisibilityTableBug}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Backup name*" Style="@($"display: {devOpsWMSWorkItemBugVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox title="Backup name" @bind-Value=@devOpsWMSWorkItemBackupName
+                                   Style="@($"display: {devOpsWMSWorkItemBugVisibility}")" Class="w-100"></RadzenTextBox>
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Severity*" Style="@($"display: {devOpsWMSWorkItemBugVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false"
+                                    Placeholder="Select..." Data=@devOpsWMSSeverityValues @bind-Value=@devOpsWMSSeverityValue Style="@($"display: {devOpsWMSWorkItemBugVisibility}")" />
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Process" Style="@($"display: {devOpsWMSWorkItemBugVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false"
+                                    Placeholder="Select..." Data=@devOpsWMSWorkItemProcesses @bind-Value=@devOpsWMSWorkItemProcess Style="@($"display: {devOpsWMSWorkItemBugVisibility}")" />
+                </td>
+            </tr>
+            <tr Style="@($"display: {devOpsWMSVisibilityTableBug}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Freshdesk" Style="@($"display: {devOpsWMSWorkItemBugVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox title="Freshdesk" @bind-Value=@devOpsWMSWorkItemFreshdeskLink
+                                   Style="@($"display: {devOpsWMSWorkItemBugVisibility}")" Class="w-100"></RadzenTextBox>
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Work description" Style="@($"display: {devOpsWMSWorkItemBugVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="true" TValue="string" AllowFiltering="false"
+                                    Placeholder="Select..." Data=@devOpsWorkItemWorkDescriptions @bind-Value=@devOpsWorkItemWorkDescription Style="@($"display: {devOpsWMSWorkItemBugVisibility}")" />
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Application" Style="@($"display: {devOpsWMSWorkItemBugVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="true" TValue="string" AllowFiltering="false"
+                                    Placeholder="Select..." Data=@devOpsWorkItemApplications @bind-Value=@devOpsWorkItemApplication Style="@($"display: {devOpsWMSWorkItemBugVisibility}")" />
+                </td>
+            </tr>
+            <tr Style="@($"display: {devOpsWMSVisibilityTableBug}")">
+                <td colspan="2">
+                    <RadzenLabel id="createLabel" Text="Repro steps" Style="@($"display: {devOpsWMSWorkItemBugVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenTextArea title="Repro Steps" @bind-Value=@devOpsWMSWorkItemReproSteps id="taDevOpsReproSteps"
+                                    Style="@($"display: {devOpsWMSWorkItemBugVisibility}")" Class="w-100"></RadzenTextArea>
+                </td>
+            </tr>
+            <tr Style="@($"display: {devOpsVisibilityTableProductBacklog}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Iteration" Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="true" TValue="string" AllowFiltering="false"
+                                    Placeholder="Select..." Data=@devOpsWMSBugIterations @bind-Value=@devOpsWMSBugIteration Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")" />
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="TimeLog project*" Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")"></RadzenLabel><br />
+                    <RadzenTextBox title="TimeLog project" @bind-Value=@devOpsWMSWorkItemTimeLogProject Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")" Class="w-100"></RadzenTextBox>
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Company" Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")"></RadzenLabel> <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="true" TValue=string FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" @bind-Value=@devOpsWMSWorkItemCustomer
+                                    FilterOperator="StringFilterOperator.Contains" AllowFiltering="true" Placeholder="Select..."
+                                    Data=@devOpsWMSWorkItemCustomers Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")" />
+                </td>
+            </tr>
+            <tr Style="@($"display: {devOpsVisibilityTableProductBacklog}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Work Effort" Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false"
+                                    Placeholder="Select..." Data=@devOpsWMSWorkItemWorkEfforts @bind-Value=@devOpsWMSWorkItemWorkEffort Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")" />
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Process" Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false"
+                                    Placeholder="Select..." Data=@devOpsWMSWorkItemProcesses @bind-Value=@devOpsWMSWorkItemProcess Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")" />
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Work description" Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="true" TValue="string" AllowFiltering="false"
+                                    Placeholder="Select..." Data=@devOpsWorkItemWorkDescriptions @bind-Value=@devOpsWorkItemWorkDescription Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")" />
+                </td>
+            </tr>
+            <tr Style="@($"display: {devOpsVisibilityTableProductBacklog}")">
+                <td colspan="2">
+                    <RadzenLabel id="createLabel" Text="Requirement" Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")"></RadzenLabel>
+                    <br />
+                    <RadzenTextArea title="Requirement" @bind-Value=@devOpsWorkItemPBIRequirement id="taDevOpsDescription"
+                                    Style="@($"display: {devOpsWorkItemProductBacklogVisibility}")" Class="w-100"></RadzenTextArea>
+                </td>
+            </tr>
+            @*/DevOps Product Backlog*@
+            <tr Style="@($"display: {devOpsA2UVisibilityTableTask}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Description" Style="@($"display: {devOpsA2UWorkItemTaskVisibility}")"></RadzenLabel> <br />
+                    <RadzenTextArea title="Description" @bind-Value=@devOpsA2UWorkItemDesc id="taDevOpsDescription"
+                                    Style="@($"display: {devOpsA2UWorkItemTaskVisibility}")" Class="w-100"></RadzenTextArea>
+                </td>
+                <td>
+                    <RadzenLabel id="createLabel" Text="Acceptance Criteria" Style="@($"display: {devOpsA2UWorkItemTaskVisibility}")"></RadzenLabel> <br />
+                    <RadzenTextArea title="Acceptance Criteria" @bind-Value=@devOpsA2UWorkItemAcceptCriteria id="taDevOpsDescription"
+                                    Style="@($"display: {devOpsA2UWorkItemTaskVisibility}")" Class="w-100"></RadzenTextArea>
+                </td>
+            </tr>
+            <tr class="align-top" Style="@($"display: {devOpsVisibilityTableTask}")">
+
+            <td>
+            <RadzenLabel id="createLabel" Text="Description" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel> <br />
+            <RadzenTextArea title="Description" @bind-Value=@devOpsWorkItemDesc id="taDevOpsDescription"
+            Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")" Class="w-100"></RadzenTextArea>
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="Solution" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel> <br />
+            <RadzenTextArea title="Solution" @bind-Value=@devOpsWorkItemSolution id="taDevOpsDescription"
+            Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")" Class="w-100"></RadzenTextArea>
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="Hotfix" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel> <br />
+            <RadzenTextArea title="Hotfix" @bind-Value=@devOpsWorkItemHotfix id="taDevOpsDescription"
+            Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")" Class="w-100"></RadzenTextArea>
+            </td>
+            </tr>
+            <tr Style="@($"display: {devOpsVisibilityTableTask}")">
+            <td>
+            <RadzenLabel id="createLabel" Text="Priority" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel><br />
+            <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue="string" AllowFiltering="false"
+            Placeholder="Select..." Data=@devOpsPriority @bind-Value=devOpsPriorityValue TextProperty="devOpsPriorityValue"
+            ValueProperty="devOpsPriorityValue" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")" />
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="Estimated Work" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel><br />
+            <RadzenNumeric title="Estimated Work" @bind-Value=@devOpsWorkItemEstWork Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")" Class="w-100" ShowUpDown="true" TValue="double?" Min="0"></RadzenNumeric>
+
+            </td>
+            </tr>
+            <tr Style="@($"display: {devOpsVisibilityTableTask}")">
+            <td>
+            <RadzenLabel id="createLabel" Text="Activity*" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel><br />
+            <RadzenDropDown id="dropdownCreator" title="Activity" AllowClear="false" TValue=string FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" @bind-Value=@devOpsBugActivity
+            FilterOperator="StringFilterOperator.Contains" AllowFiltering="true" Placeholder="Select..." Data=@devOpsBugActivities Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")" />
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="TimeLog project*" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel><br />
+            <RadzenTextBox title="TimeLog project" @bind-Value=@devOpsWMSWorkItemTimeLogProject Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")" Class="w-100"></RadzenTextBox>
+            </td>
+            </tr>*@
+            @* <tr Style="@($"display: {devOpsVisibilityTableTask}")">
+            <td>
+            <RadzenLabel id="createLabel" Text="Search for customer" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel> <br />
+            <RadzenTextBox title="Enter company name" Placeholder="Enter company name..." Value=@freshdeskSearchTerm Change=@(args => SearchTermChanged(args))
+            Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")" Class="w-100"></RadzenTextBox>
+            </td>
+            <td>
+            <RadzenLabel id="createLabel" Text="Customers" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel> <br />
+            <RadzenDropDown AllowClear="false" TValue=TimeLogCustomer.Entity AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains"
+            Placeholder="Select..." Data=@timeLogCustomers @bind-Value=@timeLogCustomer TextProperty="properties.Name" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenDropDown>
+            <RadzenButton id="freshdeskSearch" Click=@(args => searchCompany()) Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")">Search</RadzenButton>
+            </td>
+            </tr>*@
+            <tr Style="@($"display: {devOpsVisibilityTableTask}")">
+                <td>
+                    <RadzenLabel id="createLabel" Text="Company*" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel> <br />
+                    <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue=string FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" @bind-Value=@devOpsWMSWorkItemCustomer
+                                    FilterOperator="StringFilterOperator.Contains" AllowFiltering="true" Placeholder="Select..."
+                                    Data=@devOpsWMSWorkItemCustomers Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")" />
+                </td>
+                @*<td>
+                <RadzenLabel id="createLabel" Text="Contact" Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")"></RadzenLabel> <br />
+                <RadzenDropDown id="dropdownCreator" AllowClear="false" TValue=FreshdeskContact FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" @bind-Value=@selectedFreshdeskContact
+                FilterOperator="StringFilterOperator.Contains" AllowFiltering="true" Data=@freshdeskContacts.Distinct() TextProperty="name" Placeholder="Select Contact..."
+                Style="@($"display: {devOpsWMSWorkItemTaskVisibility}")" />
+                </td>*@
+            </tr>
+            @*/DevOps Task*@
+            <tr Style="@($"display: {devOpsVisibilityTable}")">
+                <td colspan=2>
+                    @{
+                        bool tempDevOpsUpdateTicket = ticket.id is not null ? false : true;
+                    }
+                    <RadzenCheckBox @bind-Value=@devOpsUpdateTicket Disabled=@tempDevOpsUpdateTicket Name="cbUpdateFreshdesk" TValue="bool" />
+                    <RadzenLabel Text="Update Freshdesk ticket with work item id" Component="cbUpdateFreshdesk" Style="margin-left: 8px; vertical-align: middle;" />
+                    @if (devOpsUpdateTicket && ticket is not null && ticket.id is not null)
+                    {
+                        <p>DevOps field on the Freshdesk Ticket with id @ticket.id will be updated. </p>
+                    }
+                </td>
+            </tr>
+
+            <tr Style="@($"display: {devOpsVisibilityTable}")">
+                <td>
+                    <RadzenButton id="createButton" Disabled=@createWorkItemButtonDisabled Click=@(args => BtnCreateWorkItem()) Style="@($"display: {devOpsWorkItemVisibility}")">Create work item</RadzenButton>
+                    <img id="spinnerCreateBtn" style="@($"visibility: {spinnerVisibilityCreateWorkItem}")" src="/loading-spinner.png" />
+
+                </td>
+            </tr>
+            <tr>
+                <td colspan=2>
+                    <RadzenLabel id="createLabel" Style="@($"display: {timeLogLinkVisibility}")" Text="Latest TimeLog project:"></RadzenLabel>
+                    <RadzenLink Path="@timeLogLink" Style="@($"display: {timeLogLinkVisibility}")" Text="@timeLogLink" target="_blank" />
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="column" id="ticketDetails">
+        <h2 id="h2TicketDetails">Ticket details</h2>
+        <table>
+            <tr>
+                <td>
+                    <RadzenLabel id="ticketLabel" Text="Subject"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox id="tbTicket" title="Subject" Value=@ticketSubject ReadOnly="true"></RadzenTextBox>
+                </td>
+                <td rowspan="3" style="vertical-align: top;" class="tableTdDesc">
+                    <p id="ticketLabelDesc">Description</p>
+                    <RadzenTextArea id="taTicketDesc" Value=@ticketDesc ReadOnly="true" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <RadzenLabel id="ticketLabel" Text="Customer"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox id="tbTicket" title="Customer" ReadOnly="true" Value=@customer></RadzenTextBox>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <RadzenLabel id="ticketLabel" Text="Contact"></RadzenLabel>
+                    <br />
+                    <RadzenTextArea id="taTicketContact" title="Contact" Value=@contactInfo ReadOnly="true" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <RadzenLabel id="ticketLabel" Text="Status"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox id="tbTicket" title="Status" Value=@ticketStatus ReadOnly="true"></RadzenTextBox>
+                </td>
+                <td>
+                    <RadzenLabel id="ticketLabel" Text="Agent"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox id="tbTicket" title="Agent" Value=@ticketAgent ReadOnly="true"></RadzenTextBox>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <RadzenLabel id="ticketLabel" Text="Priority"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox id="tbTicket" title="Priority" Value=@ticketPriority ReadOnly="true"></RadzenTextBox>
+                </td>
+                <td>
+                    <RadzenLabel id="ticketLabel" Text="Product"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox id="tbTicket" title="Product" Value=@customerProduct ReadOnly="true"></RadzenTextBox>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <RadzenLabel id="ticketLabel" Text="Type"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox id="tbTicket" title="Type" Value=@ticketType ReadOnly="true"></RadzenTextBox>
+                </td>
+                <td>
+                    <RadzenLabel id="ticketLabel" Text="Service level"></RadzenLabel>
+                    <br />
+                    <RadzenTextBox id="tbTicket" title="Service level" @bind-Value=@serviceLevel ReadOnly="true"></RadzenTextBox>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <RadzenLink Path="@freshdeskExistingLink" Style="@($"display: {freshdeskExistingLinkVisibility}")" Text="Link to Freshdesk ticket" target="_blank" />
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="row">
+    <div class="column">
+        <div id="referenceSection">
+            <table>
+                @*<tr>
+                <td>
+                <RadzenLink Path="@freshdeskLink" Style="@($"display: {freshdeskLinkVisibility}")" Text="Freshdesk link" target="_blank" />
+                </td>
+                </tr>*@
+                @* <tr>
+                <td>
+                <RadzenLink Path="@timeLogLink" Style="@($"display: {timeLogVisibility}")" Text="Latest TimeLog project" target="_blank" />
+                </td>
+                </tr>*@
+                @*<tr>
+                <td>
+                <RadzenLink Path="@devOpsLink" Style="@($"display: {devOpsVisibility}")" Text="DevOps link" target="_blank" />
+                </td>
+                </tr>*@
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public IModalService? Modal { get; set; }
+    ModalOptions options = new ModalOptions { Animation = ModalAnimation.FadeInOut(0.2) };
+    //DevOpsService devOpsService = new DevOpsService();
+    //FreshDeskService freshDeskService = new FreshDeskService();
+    //TimeLogService timeLogService = new TimeLogService();
+    bool createDevOps = false;
+    bool createTimeLog;
+    //bool createFreshdesk;
+    //string devOpsWorkItemTypeText = "";
+    string spinnerVisibilityTimeLog = "hidden";
+    string spinnerVisibilityCreateTimeLog = "hidden";
+
+    //string spinnerVisibilityFreshdesk = "hidden";
+    string spinnerFSearchVisibility = "hidden";
+    string spinnerVisibilityCreate = "hidden";
+    bool createTimeLogButtonDisabled = false;
+
+    FreshdeskCompany? company = new FreshdeskCompany();
+    FreshdeskCase? ticket = new FreshdeskCase();
+    FreshdeskAgent? agent;
+    bool freshdeskSearchDisabled = false;
+
+    // Ticket details
+    int? inputFreshdeskID;
+    string ticketSubject = "";
+    string ticketStatus = "";
+    string ticketPriority = "";
+    string ticketType = "";
+    string ticketAgent = "";
+    string customer = "";
+    string contactInfo = "";
+    string customerProduct = "";
+    string freshdeskExistingLink = "";
+    string ticketDesc = "";
+    string serviceLevel = "";
+
+    // Create Freshdesk
+    //string freshdeskVisibility = "none";
+    //string freshdeskLinkVisibility = "none";
+    string freshdeskExistingLinkVisibility = "none";
+    //string freshdeskVisibilityTable = "none";
+    //string freshdeskSubject = "";
+    string? freshdeskSearchTerm;
+    List<FreshdeskContact> freshdeskContacts = new List<FreshdeskContact>();
+    List<FreshdeskCompany>? freshdeskCompanies = new List<FreshdeskCompany>();
+    FreshdeskContact? selectedFreshdeskContact;
+    //string selectedFreshdeskCompanyName = "Select company...";
+    FreshdeskCompany? selectedFreshdeskCompany;
+    //string freshdeskDescription = "";
+    //bool freshdeskCompanyDisabled = true;
+    //bool freshdeskContactDisabled = true;
+    List<string> freshdeskStatus = new List<string>() { "Open", "Work in progress", "Pending", "Resolved", "Closed" };
+    string freshdeskSelectedStatus = "Open";
+    List<string> freshdeskPriority = new List<string>() { "Low", "Medium", "High", "Urgent" };
+    string freshdeskSelectedPriority = "Low";
+
+
+    //string freshdeskLink = "";
+    // Create TimeLog
+    string timeLogLink = "";
+    string timeLogVisibility = "none";
+    string timeLogVisibilityRow = "none";
+    string timeLogLinkVisibility = "none";
+    //string CompanyName = "";
+
+    //TimeLog project
+    string? timelogProjectName;
+    ProjectTemplates.Entity? timelogProjectTemplate;
+    TimeLogCustomer.Entity? timeLogCustomer;
+    //string? timeLogContact;
+    TimeLogUser.Entity? timeLogProjectManager;
+    //TimeLogUser.Entity? timeLogProjectAccountManager;
+    ProjectCategories.Entity? timeLogProjectCategory;
+    List<TimeLogUser.Entity> timeLogProjectManagers = new List<TimeLogUser.Entity>();
+    //List<TimeLogUser.Entity> timeLogProjectAccountManagers = new List<TimeLogUser.Entity>();
+    List<ProjectCategories.Entity> timeLogProjectCategories = new List<ProjectCategories.Entity>();
+    List<ProjectTemplates.Entity> timelogProjectTemplates = new List<ProjectTemplates.Entity>();
+    List<TimeLogCustomer.Entity> timeLogCustomers = new List<TimeLogCustomer.Entity>();
+    List<Projects.Entity> timeLogProjects = new List<Projects.Entity>();
+    List<ProjectTypes.Entity> timeLogProjectTypes = new List<ProjectTypes.Entity>();
+    ProjectTypes.Entity? timeLogProjectType;
+    string timelogProjectDescription = "";
+
+    // Create DevOps
+    DevOpsData? devOpsData;
+    DevOpsData? pbiDevOpsData;
+    bool devOpsUpdateTicket = false;
+    string spinnerVisibilityCreateWorkItem = "hidden";
+    bool createWorkItemButtonDisabled = false;
+
+    List<string> customerProductDropdown = new List<string>() { "", "" };
+    string customerProductDropdownValue = "";
+    List<string> devOpsWorkItemTypes = new List<string>() { "Bug", "Product Backlog Item" };
+    string devOpsWorkItemTypesValue = "Bug";
+
+    List<DevOpsTeamMembers.Value> devOpsWorkItemAssignedTo = new List<DevOpsTeamMembers.Value>();
+    DevOpsTeamMembers.Value devOpsWorkItemAssignedToValue;
+
+    List<string> devOpsWMSWorkItemProcesses = new List<string>();
+    string? devOpsWMSWorkItemProcess;
+
+    //string devOpsVisibility = "none";
+    string devOpsWorkItemVisibility = "none";
+    string devOpsVisibilityTable = "none";
+    //string devOpsLink = "";
+    string devOpsWorkItemTitle = "";
+    // Product Backlog
+    string devOpsWorkItemProductBacklogVisibility = "none";
+    string devOpsVisibilityTableProductBacklog = "none";
+    string devOpsWorkItemPBIRequirement = "Specifikation findes her:\n\nEstimerings regneark findes her:\n";
+    string devOpsA2UWorkItemBugVisibility = "none";
+    string devOpsA2UVisibilityTableBug = "none";
+    string devOpsA2UWorkItemAcceptCriteria = "";
+    string devOpsA2UWorkItemDesc = "";
+
+    string devOpsWorkItemReproSteps = "";
+    string devOpsWorkItemFoundInBuild = "";
+    List<string> devOpsSeverityValue = new List<string>() { "1 - Critical", "2 - High", "3 - Medium", "4 - Low" };
+    List<string> devOpsPriority = new List<string>() { "1 - Critical", "2 - High", "3 - Medium", "4 - Low" };
+    //List<string> devOpsBugCategory = new List<string>() { "Description", "DoNotTestBug", "Implementation", "Relations", "Requirements" };
+    //List<string> devOpsBugActivities = new List<string>() { "Deployment", "Design", "Development", "Documentation", "Requirements", "Testing" };
+    //string devOpsBugActivity;
+    List<string> devOpsBugIterations = new List<string>();
+    string devOpsPriorityValue = "3 - Medium";
+    string? devOpsWMSWorkItemFreshdeskLink;
+    List<string>? devOpsWorkItemWorkDescriptions = new List<string>();
+    string? devOpsWorkItemWorkDescription;
+    List<string>? devOpsWorkItemApplications = new List<string>();
+    string? devOpsWorkItemApplication; List<string>? devOpsWMSWorkItemWorkEfforts = new List<string>();
+    string? devOpsWMSWorkItemWorkEffort = "Medium";
+
+    // Task WMS
+    string devOpsWMSWorkItemTaskVisibility = "none";
+    string devOpsVisibilityTableTask = "none";
+    string devOpsWorkItemSolution = "Beskrivelse af løsningen til opgaven.";
+    string devOpsWorkItemDesc = "Link til Timelog beskrivelse eller beskrivelse af krav (userstory) til opgaven.";
+    string devOpsWorkItemHotfix = "Hotfix nummer: XXX\nÆndring til Windows Pocket: Ja/Nej\nÆndring til Android Pocket: Ja/Nej\nÆndring til Manager: Ja/Nej\nÆndring til Scheduler (+agent job)\nÆndring til Services: Ja/Nej (hvilke)\nÆndring til Rapporter: Ja/Nej (hvilke)";
+    double? devOpsWorkItemEstWork;
+    string devOpsWMSWorkItemActivity = "";
+
+    string devOpsWMSWorkItemTimeLogProject = "";
+
+    string devOpsA2UVisibilityTableTask = "none";
+    string devOpsA2UWorkItemTaskVisibility = "none";
+
+    string devOpsWMSWorkItemBugVisibility = "none";
+    string devOpsWMSVisibilityTableBug = "none";
+    string devOpsWMSWorkItemReproSteps = "";
+    string devOpsWMSWorkItemBackupName = "";
+    List<string> devOpsWMSPriorityValue = new List<string>() { "1 - Critical", "2 - High", "3 - Medium", "4 - Low" };
+    List<string> devOpsWMSSeverityValues = new List<string>() { "1 - Critical", "2 - High", "3 - Medium", "4 - Low" };
+    string devOpsWMSSeverityValue = "3 - Medium";
+    List<string> devOpsWMSBugIterations = new List<string>();
+    string devOpsWMSBugIteration = "";
+    List<string> devOpsWMSWorkItemCustomers = new List<string>();
+
+    string? devOpsWMSWorkItemCustomer;
+
+    bool timeLogIsAuth = false;
+
+    // This function is called when the component is ready to start, having received its initial parameters from its parent in the render tree.
+    protected async override void OnInitialized()
+    {
+        // If we have a code, we are coming back from the authentication process and we need to get the token.
+        if (MyNavigationManager.Uri.Contains("code="))
+        {
+            // Show loading spinner while we are getting the token. Call StateHasChanged to tell Blazor to update the UI.
+            spinnerVisibilityTimeLog = "visible";
+            StateHasChanged();
+
+            // Get the code from the URL. This is the code we need to get the token.
+            string url = MyNavigationManager.Uri;
+            string[] parts = url.Split(new string[] { "code=", "&id_token" }, StringSplitOptions.None);
+
+            // Exchanging the code for the token. This is done by calling our Web Api with the code.
+            var response = await Http.GetAsync("/TimeLog/GetTimeLogToken?grant=" + parts[1]);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            // If we got a token, we are authenticated and can show TimeLog fields.
+            if (response.IsSuccessStatusCode)
+            {
+                createTimeLog = true;
+                timeLogIsAuth = true;
+                await OnChangeTimeLogSwitch(true);
+            }
+
+            // Hide loading spinner. Call StateHasChanged to tell Blazor to update the UI.
+            spinnerVisibilityTimeLog = "hidden";
+            StateHasChanged();
+        }
+
+        // Disable the DevOps work item create button until we have loaded the DevOps data.
+        createWorkItemButtonDisabled = true;
+
+        // TODO: Here we are getting Freshdesk companies. Do we need this?
+        if (!freshdeskCompanies.Any())
+        {
+            freshdeskCompanies = await Http.GetFromJsonAsync<List<FreshdeskCompany>>("/Freshdesk/FreshdeskCompanies");
+        }
+
+        // If we haven't loaded the DevOps data yet, we need to do that now. This is to avoid loading the data if it is not needed.
+        if (devOpsData is null)
+        {
+            // Call the Web Api to get the DevOps data.
+            string data = await Http.GetStringAsync("/DevOps/GetDevOpsBugData");
+
+            // Deserialize the data to a DevOpsData object.
+            var jObject = JObject.Parse(data);
+            devOpsData = jObject.ToObject<DevOpsData>();
+
+            // Add the data to the lists.
+            if (devOpsData is not null)
+            {
+                foreach (var item in devOpsData.value)
+                {
+                    if (item.referenceName == "Custom.Customer")
+                    {
+                        devOpsWMSWorkItemCustomers = item.allowedValues;
+                    }
+                    if (item.referenceName == "Custom.Process")
+                    {
+                        devOpsWMSWorkItemProcesses = item.allowedValues;
+                    }
+                    if (item.referenceName == "Custom.Workdescription")
+                    {
+                        devOpsWorkItemWorkDescriptions = item.allowedValues;
+                    }
+                    if (item.referenceName == "Custom.Application")
+                    {
+                        devOpsWorkItemApplications = item.allowedValues;
+                    }
+                }
+            }
+
+            // TODO: Fix this
+            // DevOps PBI data is slightly different from Bug data. We need to get the data for PBI's as well.
+            string pbiData = await Http.GetStringAsync("/DevOps/GetDevOpsPBIData");
+            var pbiJObject = JObject.Parse(data);
+            pbiDevOpsData = pbiJObject.ToObject<DevOpsData>();
+
+            if (pbiDevOpsData is not null)
+            {
+                foreach (var item in pbiDevOpsData.value)
+                {
+                    Console.WriteLine(item.referenceName);
+
+                    if (item.referenceName == "Custom.WorkEffort")
+                    {
+                        Console.WriteLine(item.referenceName);
+                        Console.WriteLine(item.allowedValues);
+                        devOpsWMSWorkItemWorkEfforts = item.allowedValues;
+                    }
+                }
+            }
+        }
+
+        // Getting the DevOps team members which we use in the "assigned to" field.
+        var devOpsWorkItemAssignedToTemp = await Http.GetFromJsonAsync<DevOpsTeamMembers>("/DevOps/GetDevOpsTeamMembers");
+        if (devOpsWorkItemAssignedToTemp is not null && devOpsWorkItemAssignedToTemp.value is not null)
+        {
+            foreach (var item in devOpsWorkItemAssignedToTemp.value.OrderBy(v => v.identity?.displayName))
+            {
+                devOpsWorkItemAssignedTo.Add(item);
+            }
+        }
+
+        // Now we have loaded the DevOps data, we can enable the DevOps work item create button.
+        createWorkItemButtonDisabled = false;
+        // And lastly tell Blazor to update the UI.
+        StateHasChanged();
+    }
+
+    /*
+    * This function is called when we type a numeric value into the search bar and click "Search Freshdesk". We search in Freshdesk and fill out info in the big orange box.
+    * We fill out fields in "Create TimeLog Project" and "Create DevOps Work Item" with default values that we get from the Freshdesk ticket. E.g. customer, title etc.
+    */
+    private async Task BtnSearchFreshdeskTicket()
+    {
+        // Disable search button so the user can't click it again while we are searching.
+        freshdeskSearchDisabled = true;
+        //ticket = await freshDeskService.GetTicket(inputFreshdeskID);
+        spinnerFSearchVisibility = "visible";
+
+        // First we check if there exists a ticket with the ticket id the user put in search field. If not we show an error. This could probably be done better so we use 1 API call instead of 2.
+        var tempResult = await Http.GetAsync("/Freshdesk/FreshdeskTicket?ticketId=" + inputFreshdeskID);
+
+        // A ticket with the id the user put in search field exists.
+        if (tempResult.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            // Getting the ticket info for real this time.
+            ticket = await Http.GetFromJsonAsync<FreshdeskCase>("/Freshdesk/FreshdeskTicket?ticketId=" + inputFreshdeskID) ?? null;
+
+            // Mandatory null check
+            if (ticket != null)
+            {
+                // Getting the company which created the ticket.
+                if (ticket.company_id != null)
+                {
+                    company = await Http.GetFromJsonAsync<FreshdeskCompany>("/Freshdesk/FreshdeskCompany?companyId=" + ticket.company_id);
+                }
+
+                // Getting the contacts of the company.
+                FreshdeskContact contact = new FreshdeskContact();
+                if (ticket.requester_id != null)
+                {
+                    contact = await Http.GetFromJsonAsync<FreshdeskContact>("/Freshdesk/FreshdeskContact?contactId=" + ticket.requester_id);
+                }
+                // Getting the support agent who's linked to the ticket.
+                if (ticket.responder_id != null)
+                {
+                    agent = await Http.GetFromJsonAsync<FreshdeskAgent>("/Freshdesk/FreshdeskAgent?agentId=" + ticket.responder_id);
+                }
+
+                if (company != null && company.name != null)
+                {
+                    customer = company.name;
+                }
+
+                // Filling out TimeLog defaults
+                if (createTimeLog)
+                {
+                    if (timeLogCustomers.Any())
+                    {
+                        // Searching for TimeLog customer with Freshdesk company name.
+                        var timeLogCompanyID = timeLogCustomers.Where(c => c.properties.Name.Contains(company.name, System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+
+                        if (timeLogCompanyID is not null)
+                        {
+                            // Getting all TimeLog projects from a company.
+                            await SearchTimeLogProjects(timeLogCompanyID.properties.CustomerID);
+
+                            // Checking to see if there already exists a TimeLog project with this ticket.
+                            var project = timeLogProjects.Where(p => p.Properties.Name.Contains(ticket.id.ToString(), System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+
+                            // If there is a project we show a Modal. The user probably should create a project if there already is one.
+                            if (project is not null)
+                            {
+                                ModalParameters modalParameters = new ModalParameters();
+                                modalParameters.Add("Project", project.Properties);
+                                Modal.Show<TimeLogExists>("TimeLog Project already exists", modalParameters, options);
+                            }
+                        }
+                    }
+                }
+
+                // Filling out the orange box with selected ticket details
+                if (company != null && company.custom_fields != null && company.custom_fields.product != null)
+                {
+                    // Remove whitespaces to avoid errors.
+                    customerProduct = String.Concat(company.custom_fields.product.Where(c => !Char.IsWhiteSpace(c)));
+                }
+                // Display the contact info "nicely" in the textarea.
+                contactInfo = "Name: " + contact.name + "\nEmail: " + contact.email + "\nMobile: " + contact.mobile + "\nWork: " + contact.phone;
+                ticketSubject = ticket.subject ?? "";
+
+                // TODO: Avoid using this many conditional statements. Maybe use a dictionary instead?
+                if (ticket.status == 2)
+                {
+                    ticketStatus = "Open";
+                }
+                else if (ticket.status == 3)
+                {
+                    ticketStatus = "Pending";
+                }
+                else if (ticket.status == 4)
+                {
+                    ticketStatus = "Resolved";
+                }
+                else if (ticket.status == 5)
+                {
+                    ticketStatus = "Closed";
+                }
+                else
+                {
+                    ticketStatus = "N/A";
+                }
+                if (ticket.priority == 1)
+                {
+                    ticketPriority = "Low";
+                }
+                else if (ticket.priority == 2)
+                {
+                    ticketPriority = "Medium";
+                }
+                else if (ticket.priority == 3)
+                {
+                    ticketPriority = "High";
+                }
+                else if (ticket.priority == 4)
+                {
+                    ticketPriority = "Urgent";
+                }
+                else
+                {
+                    ticketPriority = "N/A";
+                }
+                if (ticket.type != null)
+                {
+                    ticketType = ticket.type;
+                }
+                if (agent != null && agent.contact != null)
+                {
+                    ticketAgent = agent.contact.name ?? "";
+                }
+                ticketDesc = ticket.description_text ?? "";
+
+                if (ticket.custom_fields is not null)
+                {
+                    // The dropdownmenu field contains the service level of the ticket for some reason
+                    serviceLevel = ticket.custom_fields.dropdownmenu ?? "";
+                }
+                if (company != null && company.name is not null)
+                {
+                    // Setting DevOps customer and title defaults
+                    devOpsWMSWorkItemCustomer = devOpsWMSWorkItemCustomers.Where(c => c.Contains(company.name, System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                    devOpsWorkItemTitle = ticket.id + " - " + ticket.subject;
+                }
+
+                // A link in the bottom of the "selected ticket details" so the user can check the ticket in their browser.
+                freshdeskExistingLink = "https://.freshdesk.com/a/tickets/" + ticket.id;
+                freshdeskExistingLinkVisibility = "inline-block";
+
+                // Allow the user to update the DevOps field on this ticket when creating a DevOps Work Item
+                devOpsUpdateTicket = true;
+                devOpsWMSWorkItemFreshdeskLink = "https://.freshdesk.com/a/tickets/" + inputFreshdeskID;
+
+                // TimeLog defaults
+                timelogProjectName = ticket.id + " - " + ticket.subject;
+                timeLogCustomer = timeLogCustomers.Where(c => c.properties.Name.Contains(company.name, System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                timelogProjectDescription = !String.IsNullOrEmpty(ticket.description_text) ? ticket.description_text : "";
+
+                // Setting the TimeLog project manager based on the ticket agent.
+                if (agent != null && agent.contact != null && !String.IsNullOrEmpty(agent.contact.name))
+                {
+                    string fullName = agent.contact.name;
+                    var names = fullName.Split(' ');
+                    string firstName = names[0];
+                    string lastName = names[1];
+                    timeLogProjectManager = timeLogProjectManagers.Where(m => m.properties.FirstName.Contains(firstName, System.StringComparison.CurrentCultureIgnoreCase) | m.properties.LastName.Contains(lastName, System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                }
+
+                // Servicelevel is mostly 1 on WMS.
+                if (!String.IsNullOrEmpty(serviceLevel))
+                {
+                    if (serviceLevel.Equals("ServiceLevel 2", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        timelogProjectTemplate = timelogProjectTemplates.Where(pt => pt.properties.ProjectTemplateName.Contains("SUPPORT L2", System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                    }
+                    else if (serviceLevel.Equals("ServiceLevel 3", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        timelogProjectTemplate = timelogProjectTemplates.Where(pt => pt.properties.ProjectTemplateName.Contains("SUPPORT L3", System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                    }
+                    else
+                    {
+                        timelogProjectTemplate = timelogProjectTemplates.Where(pt => pt.properties.ProjectTemplateName.Contains("SUPPORT L1 ALL", System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                    }
+                    timeLogProjectType = timeLogProjectTypes.Where(pt => pt.properties.Name.Contains("Support", System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                }
+                // If the customers product is we set the TimeLog project template to DK - Support -. Otherwise it must be.
+                if (customerProduct == "" || customerProduct == "" || customerProduct == "" || customerProduct == "")
+                {
+                    timeLogProjectCategory = timeLogProjectCategories.Where(pc => pc.properties.Name.Contains("DK - Support  - A2U", System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                }
+                else
+                {
+                    timeLogProjectCategory = timeLogProjectCategories.Where(pc => pc.properties.Name.Contains("DK - Support  - WMS", System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                }
+            }
+        }
+        // Show an error modal if the ticket had no content.
+        else if (tempResult.StatusCode == System.Net.HttpStatusCode.NoContent)
+        {
+            Modal?.Show<FreshdeskAuthMissing>("Authentication Error", options);
+        }
+        else
+        {
+            Modal?.Show<TicketNotFound>("Error", options);
+        }
+        // Hide the loading spinner and enable the search button again.
+        spinnerFSearchVisibility = "hidden";
+        freshdeskSearchDisabled = false;
+    }
+
+    // This function is called when we press the "Create Work Item" button. We get the Work Item info from the fields and create a DevOps work item
+    async void BtnCreateWorkItem()
+    {
+        // Disable buttons and show spinner while we create the work item.
+        createWorkItemButtonDisabled = true;
+        spinnerVisibilityCreateWorkItem = "visible";
+
+        // Creating a WMS Work Item in DevOps with the info from the fields.
+        if (customerProductDropdownValue == "" && !String.IsNullOrEmpty(devOpsWorkItemTitle) && devOpsWorkItemTypesValue != null)
+        {
+            //Creating a Bug Work Item.
+            if (devOpsWorkItemTypesValue == "Bug")
+            {
+                // BackupName, Customer and Severity are required fields for a Bug Work Item.
+                if (!String.IsNullOrEmpty(devOpsWMSWorkItemBackupName) && devOpsWMSWorkItemCustomer != null && devOpsWMSSeverityValue != null)
+                {
+                    DevOpsWMSBugWorkItem bug = new DevOpsWMSBugWorkItem();
+                    DevOpsWMSBugWorkItem.Fields fields = new DevOpsWMSBugWorkItem.Fields();
+                    fields.SystemTitle = devOpsWorkItemTitle;
+                    fields.SystemWorkItemType = devOpsWorkItemTypesValue;
+                    fields.MicrosoftVSTSTCMReproSteps = devOpsWMSWorkItemReproSteps ?? "";
+                    fields.CustomBackupName = devOpsWMSWorkItemBackupName;
+                    fields.MicrosoftVSTSCommonSeverity = devOpsWMSSeverityValue;
+                    fields.CustomCustomer = devOpsWMSWorkItemCustomer;
+
+                    // Optional fields for a Bug Work Item.
+                    DevOpsWMSBugWorkItem.SystemAssignedTo systemAssignedTo = new DevOpsWMSBugWorkItem.SystemAssignedTo();
+                    if (devOpsWorkItemAssignedToValue is not null && devOpsWorkItemAssignedToValue.identity is not null && !String.IsNullOrEmpty(devOpsWorkItemAssignedToValue.identity.displayName))
+                    {
+                        systemAssignedTo.displayName = devOpsWorkItemAssignedToValue.identity.displayName;
+                        fields.SystemAssignedTo = systemAssignedTo;
+                    }
+
+                    // Sprint is not required, but if it is set we need to set the Sprint Path (iteration path).
+                    if (!String.IsNullOrEmpty(devOpsWMSBugIteration))
+                    {
+                        string[] iterationsPath = devOpsWMSBugIteration.Split('|');
+                        fields.SystemIterationPath = "\\\\" + iterationsPath[0].Trim();
+                    }
+
+                    if (!String.IsNullOrEmpty(devOpsWMSWorkItemProcess))
+                        fields.CustomProcess = devOpsWMSWorkItemProcess;
+                    if (!String.IsNullOrEmpty(devOpsWMSWorkItemTimeLogProject))
+                        fields.CustomTimelogproject = devOpsWMSWorkItemTimeLogProject;
+                    if (!String.IsNullOrEmpty(devOpsWMSWorkItemFreshdeskLink))
+                        fields.CustomFreshDesk = devOpsWMSWorkItemFreshdeskLink;
+                    if (!String.IsNullOrEmpty(devOpsWorkItemWorkDescription))
+                        fields.CustomWorkdescription = devOpsWorkItemWorkDescription;
+                    if (!String.IsNullOrEmpty(devOpsWorkItemApplication))
+                        fields.CustomApplication = devOpsWorkItemApplication;
+
+                    // Set the fields in the Bug Work Item.
+                    bug.fields = fields;
+
+                    // Serialize the Bug Work Item to JSON.
+                    string json = Newtonsoft.Json.JsonConvert.SerializeObject(bug);
+                    //Console.WriteLine(json);
+
+                    // Creating the Work Item by calling our Web API. The Web API will create the Work Item in DevOps.
+                    var response = await Http.PostAsJsonAsync("DevOps/DevOpsPostWMSBug", json);
+
+                    // If the response is OK we show a success modal and maybe update Freshdesk ticket. Otherwise we show an error modal.
+                    if (response is not null)
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            // Getting the response from the Web API. The response contains the URL to the created Work Item which we show in a modal. We also need this to update the Freshdesk ticket.
+                            var responseBody = await response.Content.ReadAsStringAsync();
+                            // Deserialize the response to a DevOpsWMSBugWorkItem object.
+                            dynamic jObject = JObject.Parse(responseBody);
+                            DevOpsWMSBugWorkItem responseWorkItem = jObject.ToObject<DevOpsWMSBugWorkItem>();
+
+                            // Add a link to the modal with the URL to the created Work Item.
+                            ModalParameters modalParameters = new ModalParameters();
+                            modalParameters.Add("Link", "https://.visualstudio.com//_workitems/edit/" + responseWorkItem.id);
+
+                            // If the user has checked the "Update Freshdesk ticket" checkbox we update the Freshdesk ticket with the id to the created Work Item.
+                            if (ticket is not null && ticket.custom_fields is not null && devOpsUpdateTicket)
+                            {
+                                // Setting the custom field "DevOps Work Item" in Freshdesk to the id of the created Work Item.
+                                ticket.custom_fields.cf_devops = responseWorkItem.id;
+                                // Updating the Freshdesk ticket. We need to call the Web API to do this. The Web API will call the Freshdesk API.
+                                var freshdeskResponse = await Http.PutAsJsonAsync("Freshdesk/FreshdeskUpdate?ticketId=" + ticket.id, ticket);
+
+                                // Add a link to the modal with the URL to the updated Freshdesk ticket.
+                                modalParameters.Add("FreshdeskLink", "https://.freshdesk.com/a/tickets/" + ticket.id);
+
+                                // If the Freshdesk ticket was updated successfully we show a success modal. Otherwise we show an error modal.
+                                if (freshdeskResponse.IsSuccessStatusCode)
+                                {
+                                    // A Work Item was created and the Freshdesk ticket was updated successfully.
+                                    modalParameters.Add("UpdateSuccess", true);
+                                    Modal?.Show<DevOpsSuccessUpdate>("Success", modalParameters, options);
+                                }
+                                else
+                                {
+                                    // A Work Item was created in DevOps, but the Freshdesk ticket was not updated. We show an error modal.
+                                    modalParameters.Add("UpdateSuccess", false);
+                                    Modal?.Show<DevOpsSuccessUpdate>("Warning", modalParameters, options);
+                                }
+                            }
+                            else
+                            {
+                                // A Work Item was created in DevOps, but the Freshdesk ticket was not updated because the user did not check the "Update Freshdesk ticket" checkbox.
+                                Modal?.Show<DevOpsSuccessUpdate>("Success", modalParameters, options);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // The user did not fill in all required fields. We show an error modal.
+                    Modal?.Show<TimeLogRequired>
+            ("Error", options);
+                }
+            }
+            //else if (devOpsWorkItemTypesValue == "Task" && !String.IsNullOrEmpty(devOpsWMSWorkItemActivity) && !String.IsNullOrEmpty(devOpsWMSWorkItemTimeLogProject) && devOpsWMSWorkItemCustomer != null)
+            //{
+            //    Console.WriteLine("Create a task");
+            //    // Item type == Task
+            //    DevOpsWMSWorkItemTask task = new DevOpsWMSWorkItemTask();
+            //    DevOpsWMSWorkItemTask.Fields fields = new DevOpsWMSWorkItemTask.Fields();
+            //    fields.SystemTitle = devOpsWorkItemTitle;
+            //    fields.SystemWorkItemType = devOpsWorkItemTypesValue;
+            //    fields.SystemDescription = devOpsWorkItemDesc ?? "";
+            //    fields. = devOpsWorkItemSolution ?? "";
+            //    fields.CustomHotfix = devOpsWorkItemHotfix ?? "";
+
+            //    if (devOpsPriorityValue == "1 - Urgent")
+            //    {
+            //        fields.MicrosoftVSTSCommonPriority = 1;
+            //    }
+            //    else if (devOpsPriorityValue == "2 - High")
+            //    {
+            //        fields.MicrosoftVSTSCommonPriority = 2;
+            //    }
+            //    else if (devOpsPriorityValue == "3 - Medium")
+            //    {
+            //        fields.MicrosoftVSTSCommonPriority = 3;
+            //    }
+            //    else
+            //    {
+            //        // Priority = Low
+            //        fields.MicrosoftVSTSCommonPriority = 4;
+            //    }
+            //    fields.CustomEstimatedWork = devOpsWorkItemEstWork ?? 0;
+            //    fields.MicrosoftVSTSCommonActivity = devOpsWMSWorkItemActivity;
+            //    fields.CustomTimelogproject = devOpsWMSWorkItemTimeLogProject;
+            //    fields.CustomCustomer = devOpsWMSWorkItemCustomer;
+            //    task.fields = fields;
+
+            //    string json = Newtonsoft.Json.JsonConvert.SerializeObject(task);
+
+            //    //Console.WriteLine(json);
+
+            //    //await Http.GetAsync("DevOps/DevOpsPostWMSTask?json=" + json);
+            //}
+            else if (devOpsWorkItemTypesValue == "Product Backlog Item")
+            {
+                // Creating a Product Backlog Item in DevOps.
+                // The user has to fill in all required fields. The required fields are: Title and TimeLog Project.
+                if (!String.IsNullOrEmpty(devOpsWMSWorkItemTimeLogProject))
+                {
+                    // Setting the fields for the Product Backlog Item. The fields are set to the values the user has entered on the page.
+                    DevOpsWMSProductBacklogItem productBacklogItem = new DevOpsWMSProductBacklogItem();
+                    DevOpsWMSProductBacklogItem.Fields fields = new DevOpsWMSProductBacklogItem.Fields();
+                    fields.SystemWorkItemType = devOpsWorkItemTypesValue;
+                    fields.SystemTitle = devOpsWorkItemTitle;
+                    fields.SystemDescription = devOpsWorkItemPBIRequirement;
+                    fields.CustomTimelogproject = devOpsWMSWorkItemTimeLogProject;
+                    fields.CustomCustomer = devOpsWMSWorkItemCustomer;
+                    DevOpsWMSProductBacklogItem.SystemAssignedTo systemAssignedTo = new DevOpsWMSProductBacklogItem.SystemAssignedTo();
+
+                    // If the user has selected a value for the "Assigned To" field we set the value. Otherwise the value is null.
+                    if (devOpsWorkItemAssignedToValue is not null && devOpsWorkItemAssignedToValue.identity is not null && !String.IsNullOrEmpty(devOpsWorkItemAssignedToValue.identity.displayName))
+                    {
+                        systemAssignedTo.displayName = devOpsWorkItemAssignedToValue.identity.displayName;
+                        fields.SystemAssignedTo = systemAssignedTo;
+                    }
+
+                    //If the user has selected a value for the "Iteration Path" (sprint) field we set the value. Otherwise the value is null.
+                    if (!String.IsNullOrEmpty(devOpsWMSBugIteration))
+                    {
+                        string[] iterationsPath = devOpsWMSBugIteration.Split('|');
+                        fields.SystemIterationPath = "\\\\" + iterationsPath[0].Trim();
+                    }
+
+                    // If the user has selected a value for the item process, work effort or work description we set the value. Otherwise the values are null.
+                    if (!String.IsNullOrEmpty(devOpsWMSWorkItemProcess))
+                        fields.CustomProcess = devOpsWMSWorkItemProcess;
+                    if (!String.IsNullOrEmpty(devOpsWMSWorkItemWorkEffort))
+                        fields.CustomWorkEffort = devOpsWMSWorkItemWorkEffort;
+                    if (!String.IsNullOrEmpty(devOpsWorkItemWorkDescription))
+                        fields.CustomWorkdescription = devOpsWorkItemWorkDescription;
+
+                    // Setting the fields for the Product Backlog Item.
+                    productBacklogItem.fields = fields;
+
+                    // Converting the Product Backlog Item to a JSON string.
+                    string json = Newtonsoft.Json.JsonConvert.SerializeObject(productBacklogItem);
+                    //Console.WriteLine(json);
+
+                    // Sending the JSON string to the DevOps Web API. The Web API will create the Product Backlog Item in DevOps using the DevOps API.
+                    var response = await Http.PostAsJsonAsync("DevOps/DevOpsPostWMSPBI", json);
+
+                    // Checking if the response from the Web API is successful. If the response is successful we show a success modal. If the response is not successful we show an error modal.
+                    if (response is not null)
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            // Getting the response body from the Web API andconverting it to a string.
+                            var responseBody = await response.Content.ReadAsStringAsync();
+                            // Converting the response body to a JSON object.
+                            dynamic jObject = JObject.Parse(responseBody);
+                            // Converting the JSON object to a DevOpsWMSProductBacklogItem.
+                            DevOpsWMSProductBacklogItem responseWorkItem = jObject.ToObject<DevOpsWMSProductBacklogItem>();
+
+                            // Setting the modal link to the newly created work item.
+                            ModalParameters modalParameters = new ModalParameters();
+                            modalParameters.Add("Link", "https://.visualstudio.com//_workitems/edit/" + responseWorkItem.id);
+                            // Showing the success modal.
+                            Modal?.Show<DevOpsSuccess>("Success", modalParameters, options);
+                        }
+                    }
+                }
+                else
+                {
+                    // Showing the error modal.
+                    Modal?.Show<TimeLogRequired>
+            ("Error", options);
+                }
+            }
+        }
+        else if (customerProductDropdownValue == "" && devOpsWorkItemTitle != "" && devOpsWorkItemTypesValue != null)
+        {
+            Console.WriteLine("A2U ITEM");
+            //TODO: Create a A2U Work Item
+        }
+        else
+        {
+            // Fields not filled. Showing error Modal
+            Modal?.Show<TimeLogRequired>
+    ("Error", options);
+        }
+
+        // Hide spinner and enable the create button again.
+        spinnerVisibilityCreateWorkItem = "hidden";
+        createWorkItemButtonDisabled = false;
+        // Telling Blazor that the state has changed and that the UI should be updated.
+        StateHasChanged();
+
+        //TODO: Show the latest Work Item
+        //devOpsLink = "https://.visualstudio.com//_workitems/edit/" + task.id;
+    }
+
+    // This function is called when we press the "Create TimeLog Project" button. We get the info from the fields and call out backend Web Api which POST the info to TimeLog.
+    async Task BtnCreateTimeLogProject()
+    {
+        // Show spinner and disable the create button.
+        createTimeLogButtonDisabled = true;
+        spinnerVisibilityCreateTimeLog = "visible";
+
+        // Checking if the user has entered a value for the required fields. The required fields are: project name, template, customer, project manager, projcet category and project type.
+        if (!String.IsNullOrEmpty(timelogProjectName) && timelogProjectTemplate != null && timeLogCustomer != null && timeLogProjectManager != null && timeLogProjectCategory != null && timeLogProjectType != null)
+        {
+            //Console.WriteLine("Project name: " + timelogProjectName);
+            // Initializing a ModalResult object. This object will be used to check if the user has pressed the "Yes" or "No" button in the modal.
+            ModalResult? modalResult = null;
+            if (timeLogCustomers.Any())
+            {
+                TimeLogCustomer.Entity? timeLogCompanyID = new TimeLogCustomer.Entity();
+                if (company is not null && company.name is not null)
+                {
+                    timeLogCompanyID = timeLogCustomers.Where(c => c.properties.Name.Contains(company.name, System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                }
+                if (timeLogCompanyID is not null && timeLogCompanyID.properties is not null && timeLogCompanyID.properties.CustomerID is not 0)
+                {
+                    // Search for any projects which has a name that contains the ticket id of the selected ticket. If there is a project with the same ticket id we show a modal to the user asking if they want to create a new project or not.
+                    await SearchTimeLogProjects(timeLogCompanyID.properties.CustomerID);
+                    if (timeLogProjects is not null && ticket is not null)
+                    {
+                        var tempProject = timeLogProjects.Where(p => p.Properties.Name.Contains(ticket.id.ToString(), System.StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+
+                        if (tempProject is not null)
+                        {
+                            // Showing the modal. The modal will ask the user if they want to create a new project or not. The user can press the "Yes" or "No" button. The modalResult will be set to "Yes" or "No" depending on which button the user pressed.
+                            ModalParameters modalParameters = new ModalParameters();
+                            modalParameters.Add("Project", tempProject.Properties);
+                            var confirmationModal = Modal?.Show<TimeLogExistsYesNo>("TimeLog Project already exists", modalParameters, options);
+                            if (confirmationModal is not null)
+                                modalResult = await confirmationModal.Result;
+                        }
+                    }
+                }
+            }
+            //Console.WriteLine("Modal result = " + modalResult);
+
+            // Checking if the user has pressed the "No" button in the modal. If the user has pressed the "No" button we do not create a new project in TimeLog.
+            if (modalResult is not null && modalResult.Cancelled)
+            {
+                // Hide spinner and enable the create button again. Also return from the function.
+                spinnerVisibilityCreateTimeLog = "hidden";
+                createTimeLogButtonDisabled = false;
+                // Telling Blazor that the state has changed and that the UI should be updated.
+                StateHasChanged();
+                return;
+            }
+            // If the user hasn't pressed "No" we can assume they want to create a TimeLog project.
+            if (timelogProjectTemplate.properties is not null && timeLogCustomer.properties is not null && timeLogProjectCategory.properties is not null && timeLogProjectManager.properties is not null)
+            {
+                // Creating a new TimeLogProject object. This object will be sent to the backend Web Api which will POST the info to TimeLog using their REST Api.
+                Project project = new Project();
+                project.Name = timelogProjectName;
+                project.ProjectTemplateID = timelogProjectTemplate.properties.ProjectTemplateID;
+                project.CustomerID = timeLogCustomer.properties.CustomerID;
+                project.ProjectCategoryID = timeLogProjectCategory.properties.ProjectCategoryID;
+                project.ProjectManagerID = timeLogProjectManager.properties.UserID;
+                project.ProjectTypeID = timeLogProjectType.properties.ProjectTypeID; // 253 == Aftersales
+                project.CurrencyID = 35; // DKK CURENCY ID == 35
+                project.ProjectStartDate = DateTime.Now.ToString("s");
+                project.ProjectEndDate = DateTime.Now.AddMonths(3).ToString("s");
+                project.Description = timelogProjectDescription;
+
+                // Serializing the TimeLogProject object to a JSON string. This is needed because the backend Web Api will POST the JSON string to TimeLog.
+                string json = Newtonsoft.Json.JsonConvert.SerializeObject(new
+                {
+                    Name = project.Name,
+                    ProjectTemplateID = project.ProjectTemplateID,
+                    CustomerID = project.CustomerID,
+                    ProjectStartDate = project.ProjectStartDate,
+                    ProjectManagerID = project.ProjectManagerID,
+                    ProjectCategoryID = project.ProjectCategoryID,
+                    CurrencyID = project.CurrencyID,
+                    ProjectEndDate = project.ProjectEndDate,
+                    ProjectTypeID = project.ProjectTypeID,
+                    Description = project.Description
+                    //AccountManagerID = project.AccountManagerID
+                });
+
+                // Calling the backend Web Api which will POST the info to TimeLog.
+                //var response = await Http.GetAsync("/TimeLog/PostProject?json=" + json);
+                var response = await Http.PostAsJsonAsync("/TimeLog/PostProject", json);
+
+                // Checking if the response from the backend Web Api was successful. If it was successful we show a success message to the user. If it wasn't successful we show an error message to the user.
+                if (response is not null)
+                {
+                    if (response.IsSuccessStatusCode)
+                    {
+                        // Getting the response from the backend Web Api. The response is a JSON string which contains the TimeLog project of the newly created project.
+                        var responseBody = await response.Content.ReadAsStringAsync();
+                        // Deserializing the JSON string to a TimeLogProject object.
+                        dynamic jObject = JObject.Parse(responseBody);
+                        Projects responseProject = jObject.ToObject<Projects>();
+
+                        // Adding a link to the newly created TimeLog project to the modal. The user can click the link to open the project in TimeLog.
+                        ModalParameters modalParameters = new ModalParameters();
+                        modalParameters.Add("Link", "https://app.timelog.com/ProjectManagement/Plan/Index/" + responseProject.properties.ProjectID);
+                        Modal?.Show<DevOpsSuccess>("Success", modalParameters, options);
+
+                        timeLogLinkVisibility = "block";
+                        //ClearFields();
+                        //FillWorkItemInfo(responseProject, timeLogCustomer);
+
+                        // Show a link to the newly created TimeLog project on thepage.
+                        timeLogLink = "https://app.timelog.com/ProjectManagement/Plan/Index/" + responseProject.properties.ProjectID;
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        // Showing an error message to the user.
+                        Modal?.Show<TimeLogError>("Error", options);
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Showing an error message to the user if the user isn't authenticated.
+            Modal?.Show<TimeLogRequired>
+    ("Error", options);
+        }
+        // Hide spinner and enable the create button again.
+        spinnerVisibilityCreateTimeLog = "hidden";
+        createTimeLogButtonDisabled = false;
+        // Telling Blazor that the state has changed and that the UI should be updated.
+        StateHasChanged();
+    }
+    //void FillWorkItemInfo(Projects project, TimeLogCustomer.Entity timeLogCustomer)
+    //{
+    //    if (timeLogCustomer != null && timeLogCustomer.properties != null && ticket != null && project != null && project.properties != null)
+    //    {
+    //        devOpsWorkItemTitle = timeLogCustomer.properties.Name + ": " + ticket.subject + " (" + project.properties.No + ")";
+    //        devOpsWMSWorkItemCustomer = devOpsWMSWorkItemCustomers.Where(c => c.Contains(timeLogCustomer.properties.Name)).FirstOrDefault();
+    //    }
+    //}
+
+    //void ClearFields()
+    //{
+    //    timelogProjectName = null;
+    //    //timeLogProjectAccountManager = null;
+    //    timeLogProjectCategory = null;
+    //    timeLogProjectManager = null;
+    //    timelogProjectTemplate = null;
+    //    timeLogProjectType = null;
+    //    timeLogCustomer = null;
+    //    inputFreshdeskID = null;
+    //}
+
+    // This method is called when the user clicks the "Create DevOps Work Item" button.
+    void OnChangeDevOpsSwitch(bool value)
+    {
+        // If the user has activated the switch we show the DevOps Work Item creation form. If the user has deactivated the switch we hide the DevOps Work Item creation form.
+        if (value)
+        {
+            devOpsVisibilityTable = "table-row";
+            devOpsWorkItemVisibility = "inline-block";
+
+            // Show fields for bug because most Work Item creations will be bugs.
+            devOpsDropdownChange("Bug");
+
+            StateHasChanged();
+        }
+        else
+        {
+            devOpsVisibilityTable = "none";
+            devOpsWorkItemVisibility = "none";
+            devOpsA2UWorkItemBugVisibility = "none";
+            devOpsWMSVisibilityTableBug = "none";
+            devOpsVisibilityTableTask = "none";
+            devOpsVisibilityTableProductBacklog = "none";
+            devOpsWorkItemProductBacklogVisibility = "none";
+            devOpsWMSWorkItemBugVisibility = "none";
+            devOpsA2UVisibilityTableBug = "none";
+            devOpsWMSWorkItemTaskVisibility = "none";
+            devOpsA2UVisibilityTableTask = "none";
+            devOpsA2UWorkItemTaskVisibility = "none";
+        }
+    }
+
+    //async Task OnChangeFreshdeskSwitch(bool value)
+    //{
+    //    if (value)
+    //    {
+    //        spinnerVisibilityFreshdesk = "visible";
+    //        if (!freshdeskCompanies.Any())
+    //        {
+    //            var result = await Http.GetFromJsonAsync<List<FreshdeskCompany>>("/Freshdesk/FreshdeskCompanies");
+    //            if (result != null)
+    //            {
+    //                foreach (var item in result)
+    //                {
+    //                    freshdeskCompanies.Add(item);
+    //                }
+    //            }
+    //        }
+    //        //freshdeskVisibility = "inline-block";
+    //        //freshdeskVisibilityTable = "table-row";
+    //        spinnerVisibilityFreshdesk = "hidden";
+    //    }
+    //    else
+    //    {
+    //        spinnerVisibilityFreshdesk = "hidden";
+    //        //freshdeskVisibility = "none";
+    //        //freshdeskVisibilityTable = "none";
+    //    }
+    //}
+
+    void devOpsProductChange(object value)
+    {
+        //if (value is not null)
+        //{
+        //    customerProductDropdownValue = value.ToString();
+        //    devOpsA2UWorkItemBugVisibility = "none";
+        //    devOpsWMSVisibilityTableBug = "none";
+        //    devOpsVisibilityTableTask = "none";
+        //    devOpsVisibilityTableProductBacklog = "none";
+        //    devOpsWMSWorkItemBugVisibility = "none";
+        //    devOpsWMSWorkItemTaskVisibility = "none";
+        //    devOpsA2UVisibilityTableBug = "none";
+        //    devOpsWorkItemProductBacklogVisibility = "none";
+        //    devOpsA2UVisibilityTableTask = "none";
+        //    devOpsA2UWorkItemTaskVisibility = "none";
+        //    devOpsWorkItemTypesValue = null;
+        //    devOpsWorkItemTypeDisabled = false;
+        //}
+    }
+
+    // This method is called when the user selects a Work Item type in the dropdown.
+    async void devOpsDropdownChange(object value)
+    {
+        if (value is not null)
+        {
+            // If the user selects "WMS" we show the WMS Work Item creation form. If the user selects "A2U" we show the A2U Work Item creation form.
+            if (customerProductDropdownValue == "WMS")
+            {
+                //Console.WriteLine("WMS");
+                // If the user selects "Bug" we show the Bug creation form.
+                if (value.ToString() == "Bug")
+                {
+                    // Show the Bug creation form and hide the Task and PBI creation form.
+                    devOpsWMSWorkItemBugVisibility = "inline-block";
+                    devOpsWMSVisibilityTableBug = "table-row";
+                    devOpsVisibilityTableTask = "none";
+                    devOpsVisibilityTableProductBacklog = "none";
+                    devOpsA2UWorkItemBugVisibility = "none";
+                    devOpsA2UVisibilityTableBug = "none";
+                    devOpsWorkItemProductBacklogVisibility = "none";
+                    devOpsWMSWorkItemTaskVisibility = "none";
+
+
+                    // Getting the list of WMS iterations from the Web API.
+                    if (!devOpsWMSBugIterations.Any())
+                    {
+                        // Calling the Web API and getting the list of WMS iterations using the DevOps API.
+                        DevOpsA2UWorkItemIteration? iterations = await Http.GetFromJsonAsync<DevOpsA2UWorkItemIteration>("/DevOps/DevOpsWMSIterations");
+
+                        // If the list of WMS iterations is not null we add the iterations to the dropdown.
+                        if (iterations is not null && iterations.value is not null)
+                        {
+                            // Sorting the list of WMS iterations by the start date.
+                            foreach (var item in iterations.value.OrderByDescending(value => value.attributes?.startDate))
+                            {
+                                // Iterations which are finished are not added to the dropdown.
+                                if (item.attributes?.finishDate >= DateTime.Now)
+                                {
+                                    devOpsWMSBugIterations.Add(item.name + " | " + item.attributes.startDate.ToString("dd/MM/yyyy") + " - " + item.attributes.finishDate.ToString("dd/MM/yyyy"));
+                                }
+                            }
+                            // Select the first iteration in the dropdown.
+                            devOpsWMSBugIteration = devOpsWMSBugIterations.LastOrDefault();
+                            // Telling Blazor that the dropdown has been updated and that the UI should be updated.
+                            StateHasChanged();
+                        }
+                    }
+                }
+                else if (value.ToString() == "Task")
+                {
+                    // If the user selects "Task" we show the Task creation form and hide the Bug and PBI creation form.
+                    devOpsWMSWorkItemTaskVisibility = "inline-block";
+                    devOpsWMSWorkItemBugVisibility = "none";
+                    devOpsWMSVisibilityTableBug = "none";
+                    devOpsVisibilityTableTask = "table-row";
+                    devOpsVisibilityTableProductBacklog = "none";
+                    devOpsA2UWorkItemBugVisibility = "none";
+                    devOpsA2UVisibilityTableBug = "none";
+                    devOpsWorkItemProductBacklogVisibility = "none";
+                }
+                else
+                {
+                    // If the user selects "Product Backlog Item" we show the PBI creation form and hide the Bug and Task creation form.
+                    devOpsWMSWorkItemBugVisibility = "none";
+                    devOpsWMSVisibilityTableBug = "none";
+                    devOpsWMSWorkItemTaskVisibility = "none";
+                    devOpsVisibilityTableTask = "none";
+                    devOpsVisibilityTableProductBacklog = "table-row";
+                    devOpsWorkItemProductBacklogVisibility = "inline-block";
+                }
+            }
+            else
+            {
+                Console.WriteLine("2U");
+                //TODO: Implement the A2U Work Item creation form.
+                if (value.ToString() == "Bug")
+                {
+                    Console.WriteLine("BUG");
+                    devOpsA2UWorkItemBugVisibility = "inline-block";
+                    devOpsA2UVisibilityTableBug = "table-row";
+                    devOpsWorkItemProductBacklogVisibility = "none";
+                    devOpsA2UVisibilityTableTask = "none";
+                    devOpsA2UWorkItemTaskVisibility = "none";
+
+
+                    // Fill iterations dropdown with items
+                    if (!devOpsBugIterations.Any())
+                    {
+                        DevOpsA2UWorkItemIteration? iterations = await Http.GetFromJsonAsync<DevOpsA2UWorkItemIteration>("/DevOps/DevOpsA2UIterations");
+
+                        if (iterations is not null && iterations.value is not null)
+                        {
+                            foreach (var item in iterations.value.OrderByDescending(value => value.attributes?.startDate))
+                            {
+                                // Do not add sprints which are finished
+                                if (item.attributes?.finishDate > DateTime.Now)
+                                {
+                                    devOpsBugIterations.Add(item.name + " | " + item.attributes.startDate.ToString("dd/MM/yyyy") + " - " + item.attributes.finishDate.ToString("dd/MM/yyyy"));
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (value.ToString() == "Task")
+                {
+                    devOpsA2UVisibilityTableTask = "table-row";
+                    devOpsA2UWorkItemTaskVisibility = "inline-block";
+                    devOpsA2UWorkItemBugVisibility = "none";
+                    devOpsA2UVisibilityTableBug = "none";
+                    devOpsWorkItemProductBacklogVisibility = "none";
+                }
+                else
+                {
+                    Console.WriteLine("Other");
+                    devOpsA2UWorkItemBugVisibility = "none";
+                    devOpsA2UVisibilityTableBug = "none";
+                    devOpsVisibilityTableProductBacklog = "table-row";
+                    devOpsWorkItemProductBacklogVisibility = "inline-block";
+                }
+            }
+        }
+    }
+
+    // TODO: This method might not be needed. Consider removing it.
+    async Task GetFreshdeskContacts(object value)
+    {
+        FreshdeskCompany company = (FreshdeskCompany)value;
+        if (selectedFreshdeskCompany != null)
+        {
+            if (!freshdeskContacts.Any())
+            {
+                var result = await Http.GetFromJsonAsync<List<FreshdeskContact>>("/Freshdesk/FreshdeskContacts?id=" + company.id);
+
+                if (result != null)
+                {
+                    foreach (var item in result)
+                    {
+                        freshdeskContacts.Add(item);
+                    }
+                }
+            }
+        }
+    }
+
+    // TODO: This method might not be needed. Consider removing it.
+    void SearchTermChanged(string value)
+    {
+        freshdeskSearchTerm = value;
+    }
+
+    //async Task searchCompany()
+    //{
+    //    //    //freshdeskCompanies.Clear();
+    //    //    //freshdeskContacts.Clear();
+    //    //    //selectedFreshdeskCompanyName = "Select company...";
+    //    //    //selectedFreshdeskContact = "Select contact...";
+    //    //    //freshdeskContactDisabled = true;
+    //    //    //TODO: Move this to on initialize function.
+    //    //    //var companies = await freshDeskService.GetCompanies(freshdeskSearchTerm);
+    //    //    //if (companies.companies.Any())
+    //    //    //{
+    //    //    //    freshdeskCompanyDisabled = false;
+    //    //    //    foreach (var item in companies.companies)
+    //    //    //    {
+    //    //    //        freshdeskCompanies.Add(item);
+    //    //    //    }
+    //    //    //}
+    //    //    //else
+    //    //    //{
+    //    //    //    freshdeskCompanyDisabled = true;
+    //    //    //}
+
+    //}
+
+    // This method is called when the user clicks the "Authorize TimeLog" button. It will open a new window where the user can authorize TimeLog. This is required for OAuth2.
+    void BtnTimeLog()
+    {
+        // Localhost redirect_uri: https://localhost:7123/
+        // Production redirect_uri: https://taskmanager.azurewebsites.net/
+
+        // Get the current URL.
+        string baseAddress = HostEnvironment.BaseAddress;
+        // Checking if the current URL has a trailing slash.
+        int lastSlash = baseAddress.LastIndexOf('/');
+        // If the current URL has a trailing slash, we remove it.
+        string redirect_uri = (lastSlash > -1) ? baseAddress.Substring(0, lastSlash) : baseAddress;
+
+        Console.WriteLine(HostEnvironment.BaseAddress);
+        Console.WriteLine(redirect_uri);
+
+        // The URL should now be https://taskmanager.azurewebsites.net in production.
+        // The URL should now be https://localhost:7123 in development.
+
+        // We add the redirect_uri to the URL.
+
+        // TODO: Check if BaseAddress is correct.
+        string url = "https://login.timelog.com/connect/authorize?client_id=&scope=openid offline_access tlp&response_type=code id_token&redirect_uri=" + redirect_uri + "&nonce=zxc&state=zxc";
+
+        UriHelper.NavigateTo(url);
+    }
+
+    // This method is called when the user activates the "Create TimeLog Project" button. It will show/hide the TimeLog project creation form.
+    public async Task OnChangeTimeLogSwitch(bool value)
+    {
+        // If the value is true, show the TimeLog project creation form.
+        if (value)
+        {
+            // Show a spinner.
+            spinnerVisibilityTimeLog = "visible";
+            // If the user is authorized, show the TimeLog project creation form.
+            if (timeLogIsAuth)
+            {
+                // If haven't loaded the TimeLog project templates yet, load them.
+                if (!timelogProjectTemplates.Any())
+                {
+                    // Getting the TimeLog project templates from the Web API using the TimeLog REST API.
+                    var projectTemplates = await Http.GetFromJsonAsync<ProjectTemplates>("/TimeLog/GetProjectTemplates");
+                    if (projectTemplates != null && projectTemplates.entities != null && projectTemplates.entities.Any())
+                    {
+                        foreach (var item in projectTemplates.entities)
+                        {
+                            if (item.properties != null)
+                            {
+                                // Only add the project templates which are active.
+                                if (item.properties.IsActive == true)
+                                {
+                                    timelogProjectTemplates.Add(item);
+                                }
+                            }
+                        }
+                    }
+                }
+                // If haven't loaded the TimeLog project managers yet, load them.
+                if (!timeLogProjectManagers.Any())
+                {
+                    // Getting the TimeLog project managers from the Web API using the TimeLog REST API.
+                    var users = await Http.GetFromJsonAsync<TimeLogUser>("/TimeLog/GetUsers");
+                    if (users != null && users.entities != null && users.entities.Any())
+                    {
+                        foreach (var item in users.entities)
+                        {
+                            if (item.properties != null)
+                            {
+                                // Only add the project managers which are active.
+                                if (item.properties.IsActive != null && item.properties.IsActive == true)
+                                {
+                                    timeLogProjectManagers.Add(item);
+                                    //timeLogProjectAccountManagers.Add(item);
+                                }
+                            }
+                        }
+                    }
+                }
+                // If haven't loaded the TimeLog project categories yet, load them.
+                if (!timeLogProjectCategories.Any())
+                {
+                    // Getting the TimeLog project categories from the Web API using the TimeLog REST API.
+                    var projectCategories = await Http.GetFromJsonAsync<ProjectCategories>("/TimeLog/GetProjectCategories");
+                    if (projectCategories != null && projectCategories.entities != null && projectCategories.entities.Any())
+                    {
+                        foreach (var item in projectCategories.entities)
+                        {
+                            // Only add the project categories which are active.
+                            if (item.properties != null && item.properties.IsActive == true)
+                            {
+                                timeLogProjectCategories.Add(item);
+                            }
+                        }
+                    }
+                }
+                // If haven't loaded the TimeLog project types yet, load them.
+                if (!timeLogProjectTypes.Any())
+                {
+                    // Getting the TimeLog project types from the Web API using the TimeLog REST API.
+                    var projectTypes = await Http.GetFromJsonAsync<ProjectTypes>("/TimeLog/GetProjectTypes");
+                    if (projectTypes != null && projectTypes.entities != null && projectTypes.entities.Any())
+                    {
+                        foreach (var item in projectTypes.entities)
+                        {
+                            // Only add the project types which are active.
+                            if (item.properties != null && item.properties.IsActive == true)
+                            {
+                                timeLogProjectTypes.Add(item);
+                            }
+                        }
+                    }
+                }
+                // If haven't loaded the TimeLog customers yet, load them.
+                if (!timeLogCustomers.Any())
+                {
+                    // Getting the TimeLog customers from the Web API using the TimeLog REST API.
+                    var customers = await Http.GetFromJsonAsync<TimeLogCustomer>("/TimeLog/GetCustomers");
+                    if (customers != null && customers.entities != null && customers.entities.Any())
+                    {
+                        // Order the customers by name.
+                        foreach (var item in customers.entities.OrderBy(o => o?.properties?.Name))
+                        {
+                            // Checking if the CustomerStausID is 170, which means the customer is archived/inactive and should not be shown in the dropdown.
+                            if (item.properties is not null && item.properties.CustomerStatusID is not null && item.properties.CustomerStatusID != 170)
+                            {
+                                timeLogCustomers.Add(item);
+                            }
+                        }
+                    }
+                }
+                // Hide the spinner and show the TimeLog project creation form.
+                spinnerVisibilityTimeLog = "hidden";
+                timeLogVisibility = "inline-block";
+                timeLogVisibilityRow = "table-row";
+            }
+            else
+            {
+                // If the user is not authorized, do not show the TimeLog project creation form.
+                timeLogVisibility = "none";
+                spinnerVisibilityTimeLog = "hidden";
+                timeLogVisibilityRow = "none";
+                // Show a message to the user that they need to authorize.
+                Modal?.Show<TimeLogAuth>("TimeLog authorization missing", options);
+                createTimeLog = false;
+            }
+        }
+        else
+        {
+            timeLogVisibility = "none";
+            timeLogVisibilityRow = "none";
+        }
+    }
+
+    //async Task freshdeskCompanyChanged(object companyName)
+    //{
+    //    freshdeskContacts.Clear();
+    //    selectedFreshdeskContact = "Select contact...";
+    //    freshdeskContactDisabled = false;
+    //    selectedFreshdeskCompanyName = companyName.ToString();
+    //    Console.WriteLine(companyName);
+    //    //FreshdeskCompanies.Company company = (FreshdeskCompanies.Company)freshdeskCompanies.FirstOrDefault(c => c.name == companyName);
+    //    //selectedFreshdeskCompany = company;
+    //    //var contacts = await freshDeskService.GetContacts(company.id);
+    //    //foreach (var item in contacts)
+    //    //{
+    //    //    Console.WriteLine(item.name);
+    //    //    freshdeskContacts.Add(item);
+    //    //}
+    //}
+
+    //void freshdeskContactChanged(object value)
+    //{
+    //    selectedFreshdeskContact = value.ToString() ?? "";
+    //}
+
+    //void freshdeskStatusChanged(object value)
+    //{
+    //    freshdeskSelectedStatus = value.ToString() ?? "";
+    //}
+    //void freshdeskPriorityChanged(object value)
+    //{
+    //    freshdeskSelectedPriority = value.ToString() ?? "";
+    //}
+    //void devOpsWMSBugIterationChange(object value)
+    //{
+    //    devOpsWMSBugIteration = value.ToString() ?? "";
+    //}
+
+    /*
+     * This method is called when the user is either searching for a Freshdesk ticket or trying to create a TimeLog project.
+     * It checks if there already exists a project, so the user might need to reconsider creating a new project.
+     */
+    private async Task SearchTimeLogProjects(int? customerID)
+    {
+        //Console.WriteLine("Searching for timelog project with customerID = " + customerID);
+        var projects = await Http.GetFromJsonAsync<Projects>("/TimeLog/GetProjects?customerID=" + customerID);
+        if (projects is not null && projects.entities is not null)
+        {
+            foreach (var project in projects.entities)
+            {
+                timeLogProjects.Add(project);
+            }
+        }
+    }
+}

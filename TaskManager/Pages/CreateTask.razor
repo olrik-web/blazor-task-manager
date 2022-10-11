@@ -1,0 +1,617 @@
+﻿@page "/task"
+@using System.ComponentModel
+@using Newtonsoft.Json.Linq
+@using Shared.Modals
+@inject HttpClient Http
+
+
+<h3>Create Task</h3>
+<hr />
+
+
+@if (workItem is not null && workItem.fields is not null)
+{
+    <RadzenCard>
+        <div class="row">
+            <h4>Work Item</h4>
+        </div>
+        <div class="row">
+            <div class="col">
+                <RadzenLabel Text="Search for an existing work item" />
+                <br />
+                <RadzenNumeric TValue="int" Min="0" @bind-Value=@searchId Class="w-100" />
+            </div>
+            <div class="col">
+                <br />
+                <RadzenButton style="width: 160px" IsBusy=@isSearching Click=@WorkItemSearch Text="Search" />
+            </div>
+            @*Displaying Work Item children*@
+            <div class="col">
+                @{
+                    if (relationWorkItems is not null && relationWorkItems.Count > 0)
+                    {
+                        <RadzenLabel Text="Child:" />
+                        <br />
+
+                        foreach (var item in relationWorkItems)
+                        {
+                            if (item.fields is not null)
+                            {
+                                string text = item.id + ": " + Truncate(item.fields.SystemTitle, 50) + "...";
+                                string path = "edit/" + item.id;
+                                <RadzenLink Icon="assignment_turned_in" Path=@path Text=@text target="_blank" /> <br />
+                            }
+                        }
+                    }
+                }
+            </div>
+        </div>
+        <pre />
+        <div class="row">
+            <div class="col">
+                <RadzenLabel Text="Title"> </RadzenLabel>
+                <br />
+                <RadzenTextBox ReadOnly="true" Class="w-100" @bind-Value=workItem.fields.SystemTitle />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Type"> </RadzenLabel>
+                <br />
+                <RadzenTextBox ReadOnly="true" Class="w-100" @bind-Value=workItem.fields.SystemWorkItemType />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="State"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Class="w-100" Disabled="true" @bind-Value=workItem.fields.SystemState Data=@taskStates />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <br />
+                <RadzenLabel Text="Standard approved"> </RadzenLabel>
+                <br />
+                <RadzenTextBox ReadOnly="true" Class="w-100" @bind-Value=workItem.fields.CustomStandardApproved />
+            </div>
+            <div class="col">
+            </div>
+            <div class="col">
+            </div>
+        </div>
+    </RadzenCard>
+    <pre />
+    <RadzenCard>
+        <div class="row">
+            <h4>New task</h4>
+        </div>
+        <div class="row">
+            <div class="col">
+                <RadzenLabel Text="Title*"> </RadzenLabel>
+                <br />
+                <RadzenTextBox Class="w-100" @bind-Value=createTask.fields.SystemTitle />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Type*"> </RadzenLabel>
+                <br />
+                <RadzenTextBox ReadOnly="true" Class="w-100" @bind-Value=createTask.fields.SystemWorkItemType />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="State"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Class="w-100" Disabled="true" @bind-Value=createTask.fields.SystemState Data=@taskStates />
+            </div>
+            @*More space between rows*@
+            <pre />
+        </div>
+        <div class="row">
+            <div class="col">
+                <RadzenLabel Text="TimeLog project*"> </RadzenLabel>
+                <br />
+                <RadzenTextBox Class="w-100" @bind-Value=createTask.fields.CustomTimelogproject />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Activity*"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Class="w-100" @bind-Value=createTask.fields.MicrosoftVSTSCommonActivity Data=@taskActivities AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Customer*"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Class="w-100" @bind-Value=createTask.fields.CustomCustomer Data=@taskCustomers AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" />
+            </div>
+            @*More space between rows*@
+            <pre />
+        </div>
+        <div class="row">
+            <div class="col">
+                <RadzenLabel Text="Process"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Class="w-100" AllowClear="false" @bind-Value=createTask.fields.CustomProcess Data=@taskProcess AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" />
+
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Work description"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Class="w-100" AllowClear="false" @bind-Value=createTask.fields.CustomWorkdescription Data=@taskWorkDesc AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.Contains" />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Estimated/remaining work"> </RadzenLabel>
+                <br />
+                <RadzenNumeric Class="w-100" TValue="double?" Min="0" Step="0.5" @bind-Value=@createTask.fields.CustomEstimatedWork />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                @{
+                    if (createTwoTasks)
+                    {
+                        <p>@createTwoTasksText</p>
+                    }
+                }
+                <RadzenButton style="width: 160px" IsBusy=@isSearching Click=@PostTask Text="Create Task" />
+            </div>
+        </div>
+    </RadzenCard>
+    <pre />
+
+    if (recentTasks.Any())
+    {
+        <RadzenLabel Text="Recent tasks:" />
+        foreach (var item in recentTasks)
+        {
+            if (item.fields is not null && !String.IsNullOrEmpty(item.fields.SystemTitle))
+            {
+                string text = item.id + ": " + Truncate(item.fields.SystemTitle, 150);
+                string path = "/edit/" + item.id;
+                <RadzenLink Icon="assignment_turned_in" Path=@path Text=@text target="_blank" />
+                <br />
+            }
+        }
+    }
+}
+else
+{
+    <RadzenCard>
+        <div class="row">
+            <h4>Work Item</h4>
+        </div>
+        <div class="row">
+            <div class="col">
+                <RadzenLabel Text="Search for existing work item"> </RadzenLabel>
+                <br />
+                <RadzenNumeric TValue="int" Min="0" @bind-Value=@searchId Class="w-100" />
+            </div>
+            <div class="col">
+                <br />
+                <RadzenButton style="width: 160px" IsBusy=@isSearching Click=@WorkItemSearch Text="Search" />
+            </div>
+            <div class="col">
+            </div>
+        </div>
+        <pre />
+        <div class="row">
+            <div class="col">
+                <RadzenLabel Text="Title"> </RadzenLabel>
+                <br />
+                <RadzenTextBox ReadOnly="true" Class="w-100" />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Type"> </RadzenLabel>
+                <br />
+                <RadzenTextBox ReadOnly="true" Class="w-100" />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="State"> </RadzenLabel>
+                <br />
+                <RadzenTextBox ReadOnly="true" Class="w-100" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <br />
+                <RadzenLabel Text="Standard approved"> </RadzenLabel>
+                <br />
+                <RadzenTextBox ReadOnly="true" Class="w-100" />
+            </div>
+            <div class="col">
+            </div>
+            <div class="col">
+            </div>
+        </div>
+
+    </RadzenCard>
+    <pre />
+    <RadzenCard>
+        <div class="row">
+            <h4>Create New Task</h4>
+        </div>
+        <div class="row">
+            <div class="col">
+                <RadzenLabel Text="Title*"> </RadzenLabel>
+                <br />
+                <RadzenTextBox Disabled="true" Class="w-100" />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Type"> </RadzenLabel>
+                <br />
+                <RadzenTextBox Disabled="true" ReadOnly="true" Class="w-100" />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="State"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Class="w-100" Disabled="true" TValue="string" />
+            </div>
+            @*More space between rows*@
+            <pre />
+        </div>
+        <div class="row">
+            <div class="col">
+                <RadzenLabel Text="TimeLog project*"> </RadzenLabel>
+                <br />
+                <RadzenTextBox Disabled="true" Class="w-100" />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Activity*"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Disabled="true" Class="w-100" TValue="string" />
+            </div>
+            <div class="col">
+                <RadzenLabel Disabled="true" Text="Customer*"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Disabled="true" Class="w-100" TValue="string" />
+            </div>
+            @*More space between rows*@
+            <pre />
+        </div>
+        <div class="row">
+            <div class="col">
+                <RadzenLabel Text="Process"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Disabled="true" Class="w-100" AllowClear="false" TValue="string" />
+
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Work description"> </RadzenLabel>
+                <br />
+                <RadzenDropDown Disabled="true" Class="w-100" AllowClear="false" TValue="string" />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Estimated/remaining work"> </RadzenLabel>
+                <br />
+                <RadzenNumeric Disabled="true" Class="w-100" TValue="double?" Min="0" Step="0.5" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <RadzenButton Disabled="true" style="width: 160px" IsBusy=@isSearching Text="Create Task" />
+            </div>
+        </div>
+    </RadzenCard>
+    <pre />
+}
+
+@code {
+    [CascadingParameter] public IModalService? Modal { get; set; }
+    ModalOptions options = new ModalOptions { Animation = ModalAnimation.FadeInOut(0.2) };
+
+    int searchId;
+    bool isSearching;
+    DevOpsWorkItem? workItem;
+    DevOpsWorkItem? createTask;
+    DevOpsData? devOpsData;
+    List<string> taskActivities = new List<string>();
+    List<string> taskCustomers = new List<string>();
+    List<string> taskStates = new List<string>();
+    List<string> taskProcess = new List<string>();
+    List<string> taskWorkDesc = new List<string>();
+    List<DevOpsWorkItem> relationWorkItems = new List<DevOpsWorkItem>();
+    bool createTwoTasks = false;
+    string createTwoTasksText = "";
+    List<DevOpsWorkItem> recentTasks = new List<DevOpsWorkItem>();
+
+    protected override async void OnInitialized()
+    {
+        // Getting all kinds of DevOps data. Including custom fields we can use in our dropdowns.
+        if (devOpsData is null)
+        {
+            string data = await Http.GetStringAsync("/DevOps/GetDevOpsTaskData");
+            Console.WriteLine(data);
+            var jObject = JObject.Parse(data);
+            devOpsData = jObject.ToObject<DevOpsData>();
+
+            if (devOpsData is not null)
+            {
+                foreach (var value in devOpsData.value)
+                {
+                    // All DevOps customers we can use in a dropdown menu
+                    if (value.referenceName == "Custom.Customer")
+                    {
+                        taskCustomers = value.allowedValues;
+                    }
+                    // All DevOps activities we can use in a dropdown menu
+                    else if (value.referenceName == "Microsoft.VSTS.Common.Activity")
+                    {
+                        taskActivities = value.allowedValues;
+                    }
+                    // All DevOps states we can use in a dropdown menu
+                    else if (value.referenceName == "System.State")
+                    {
+                        /*
+                        * devOpsData contains empty System.State arrays for some reason. These override our list of states with an empty array, which we don't want.
+                        * We only add the state values to our taskStates list if the array count is greater than 0 (contains values).
+                        */
+                        if (value.allowedValues.Count > 0)
+                        {
+                            taskStates = value.allowedValues;
+                        }
+                    }
+                    // All DevOps processes we can use in a dropdown menu
+                    else if (value.referenceName == "Custom.Process")
+                    {
+                        if (value.allowedValues.Count > 0)
+                        {
+                            taskProcess = value.allowedValues;
+                        }
+                    }
+                    // All DevOps work descriptions we can use in a dropdown menu
+                    else if (value.referenceName == "Custom.Workdescription")
+                    {
+                        if (value.allowedValues.Count > 0)
+                        {
+                            taskWorkDesc = value.allowedValues;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task WorkItemSearch()
+    {
+        // Show searching icon
+        isSearching = true;
+
+        // Reset child relations field
+        if (relationWorkItems.Any())
+        {
+            relationWorkItems.Clear();
+        }
+
+        // Getting the Work Item we searched for using our Web API
+        string resultWorkItem = await Http.GetStringAsync("/DevOps/DevOpsWMSWorkItem?id=" + searchId);
+
+        if (!String.IsNullOrEmpty(resultWorkItem))
+        {
+            // Convert from JSON string to object
+            var jObject = JObject.Parse(resultWorkItem);
+            workItem = jObject.ToObject<DevOpsWorkItem>();
+
+            /*
+            * C# is pass by reference if we assign one object to another.
+            * E.g. createTask = workItem
+            * Therefore we copy it, so it is two different objects which use pass by value
+            */
+            createTask = CopyWorkItem(workItem);
+            createTask.fields.MicrosoftVSTSCommonActivity = "Development - PROJ";
+            createTask.fields.CustomProcess = taskProcess.FirstOrDefault();
+            createTask.fields.CustomWorkdescription = taskWorkDesc.FirstOrDefault();
+
+            // Checking for related Work Items (children)
+            if (workItem.relations is not null && workItem.relations.Count > 0)
+            {
+                foreach (var item in workItem.relations)
+                {
+                    if (item.attributes is not null && item.attributes.name is not null)
+                    {
+                        if (item.attributes.name.Equals("Child", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string relWorkItemRes = await Http.GetStringAsync("/DevOps/DevOpsWMSWorkItemURL?url=" + item.url);
+                            var relJObject = JObject.Parse(relWorkItemRes);
+
+                            DevOpsWorkItem relWorkItem = relJObject.ToObject<DevOpsWorkItem>();
+                            relationWorkItems.Add(relWorkItem);
+                        }
+                    }
+                }
+            }
+
+            // We need to create two tasks if the parent work item is standard approved.
+            if (!String.IsNullOrEmpty(workItem.fields.CustomStandardApproved) && workItem.fields.CustomStandardApproved.Equals("Standard", StringComparison.OrdinalIgnoreCase))
+            {
+                createTwoTasks = true;
+                createTwoTasksText = "Two tasks will be created because parent work item is standard approved.";
+            }
+            else
+            {
+                createTwoTasks = false;
+                createTwoTasksText = "";
+            }
+        }
+        else
+        {
+            // No work item found with the given ID (searchId) or an error occurred while searching for the work item. Show a modal with the error message.
+            Modal?.Show<DevOpsWorkItemNotFound>("Error", new ModalOptions { Animation = ModalAnimation.FadeInOut(0.2) });
+        }
+        // Hide searching icon
+        isSearching = false;
+        StateHasChanged();
+    }
+
+    /*
+     * This function is called when the user clicks the Create Task button. One or two post requests should be made which create DevOps tasks.
+     */
+    private async Task PostTask()
+    {
+        isSearching = true;
+        if (!String.IsNullOrEmpty(createTask.fields.SystemTitle) && !String.IsNullOrEmpty(createTask.fields.CustomTimelogproject) && !String.IsNullOrEmpty(createTask.fields.CustomProcess) && !String.IsNullOrEmpty(createTask.fields.CustomWorkdescription) && !String.IsNullOrEmpty(createTask.fields.MicrosoftVSTSCommonActivity) && !String.IsNullOrEmpty(createTask.fields.SystemWorkItemType))
+        {
+            /*
+            * If work item is standard approved we need to create two tasks.
+            * One needs to have hardcoded remaining- and estimated work to 2 and also dev branch to customer.
+            * The other gets remaining- and estimated work from user input and sets dev branch to standard.
+            */
+            if (createTwoTasks)
+            {
+                Console.WriteLine("Creating two tasks");
+
+                // TODO: Test if this works
+                for (var i = 0; i < 2; i++)
+                {
+                    Console.WriteLine("Creating a task " + i);
+
+                    if (i % 2 != 0)
+                    {
+                        createTask.fields.CustomDevbranch = "Customer";
+                        createTask.fields.MicrosoftVSTSSchedulingRemainingWork = 2;
+                        createTask.fields.CustomEstimatedWork = 2;
+                    }
+                    string json = Newtonsoft.Json.JsonConvert.SerializeObject(createTask);
+
+                    //Console.WriteLine(json);
+
+                    var response = await Http.GetAsync("DevOps/DevOpsPostWMSTask?json=" + json);
+
+                    if (response is not null)
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var responseBody = await response.Content.ReadAsStringAsync();
+                            dynamic jObject = JObject.Parse(responseBody);
+                            DevOpsWorkItem responseTask = jObject.ToObject<DevOpsWorkItem>();
+
+                            /*
+                            * To avoid the recentTasks list to pile up, we limit the size to 5.
+                            * We remove the first item which is the earliest created so we have a list of the 5 most recent tasks.
+                           */
+                            if (recentTasks.Count >= 5)
+                            {
+                                while (recentTasks.Count >= 5)
+                                {
+                                    recentTasks.RemoveAt(0);
+                                }
+                            }
+                            recentTasks.Add(responseTask);
+
+                            // Showing a success modal because the task was created successfully.
+                            ModalParameters modalParameters = new ModalParameters();
+                            modalParameters.Add("Link", "/edit/" + responseTask.id);
+                            if (Modal is not null)
+                            {
+                                Modal.Show<TimeLogSuccess>("Success", modalParameters, options);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("Creating a single task");
+                // Work Item is not standard approved and we only need to create 1 task
+                string json = Newtonsoft.Json.JsonConvert.SerializeObject(createTask);
+
+                //Console.WriteLine(json);
+
+                var response = await Http.GetAsync("DevOps/DevOpsPostWMSTask?json=" + json);
+
+                if (response is not null)
+                {
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseBody = await response.Content.ReadAsStringAsync();
+                        dynamic jObject = JObject.Parse(responseBody);
+                        DevOpsWorkItem responseTask = jObject.ToObject<DevOpsWorkItem>();
+
+                        /*
+                         * To avoid the recentTasks list to pile up, we limit the size to 5.
+                         * We remove the first item which is the earliest created so we have a list of the 5 most recent tasks.
+                        */
+                        if (recentTasks.Count >= 5)
+                        {
+                            while (recentTasks.Count >= 5)
+                            {
+                                recentTasks.RemoveAt(0);
+                            }
+                        }
+                        recentTasks.Add(responseTask);
+
+                        // Showing a success modal because the task was created successfully.
+                        ModalParameters modalParameters = new ModalParameters();
+                        modalParameters.Add("Link", "/edit/" + responseTask.id);
+                        if (Modal is not null)
+                        {
+                            Modal.Show<TimeLogSuccess>("Success", modalParameters, options);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (Modal is not null)
+            {
+                Modal.Show<TimeLogRequired>
+        ("Error", options);
+            }
+        }
+
+        isSearching = false;
+    }
+
+    private DevOpsWorkItem CopyWorkItem(DevOpsWorkItem workItem)
+    {
+        DevOpsWorkItem tempWorkItem = new DevOpsWorkItem();
+        DevOpsWorkItem.Fields tempFields = new DevOpsWorkItem.Fields();
+        tempFields.SystemTeamProject = workItem.fields.SystemTeamProject;
+        tempFields.SystemAreaPath = workItem.fields.SystemAreaPath;
+        tempFields.SystemIterationPath = workItem.fields.SystemIterationPath;
+        tempFields.SystemWorkItemType = "Task";
+        tempFields.SystemState = "New";
+        tempFields.SystemReason = workItem.fields.SystemReason;
+        tempFields.SystemAssignedTo = workItem.fields.SystemAssignedTo;
+        tempFields.SystemCreatedDate = workItem.fields.SystemCreatedDate;
+        tempFields.SystemCreatedBy = workItem.fields.SystemCreatedBy;
+        tempFields.SystemChangedDate = workItem.fields.SystemChangedDate;
+        tempFields.SystemChangedBy = workItem.fields.SystemChangedBy;
+        //tempWorkItem.fields.SystemCommentCount = workItem.fields.SystemCommentCount;
+        tempFields.SystemTitle = workItem.fields.SystemTitle;
+        tempFields.MicrosoftVSTSCommonPriority = workItem.fields.MicrosoftVSTSCommonPriority;
+        tempFields.MicrosoftVSTSCommonStateChangeDate = workItem.fields.MicrosoftVSTSCommonStateChangeDate;
+        tempFields.MicrosoftVSTSCommonSeverity = workItem.fields.MicrosoftVSTSCommonSeverity;
+        tempFields.MicrosoftVSTSCommonValueArea = workItem.fields.MicrosoftVSTSCommonValueArea;
+        tempFields.MicrosoftVSTSCommonActivatedDate = workItem.fields.MicrosoftVSTSCommonActivatedDate;
+        tempFields.MicrosoftVSTSCommonActivatedBy = workItem.fields.MicrosoftVSTSCommonActivatedBy;
+        tempFields.CustomCustomer = workItem.fields.CustomCustomer;
+        tempFields.CustomBackupName = workItem.fields.CustomBackupName;
+        tempFields.CustomDevbranch = workItem.fields.CustomDevbranch;
+        tempFields.CustomHotfix = workItem.fields.CustomHotfix;
+        tempFields.CustomTimelogproject = workItem.fields.CustomTimelogproject;
+        tempFields.SystemHistory = workItem.fields.SystemHistory;
+        tempFields.CustomFreshDesk = workItem.fields.CustomFreshDesk;
+        tempFields.CustomProcess = workItem.fields.CustomProcess;
+        tempFields.CustomWorkdescription = workItem.fields.CustomWorkdescription;
+        tempFields.SystemParent = workItem.id;
+
+        tempWorkItem.fields = tempFields;
+
+        List<DevOpsWorkItem.Relation> relations = new List<DevOpsWorkItem.Relation>();
+
+        DevOpsWorkItem.Relation relation = new DevOpsWorkItem.Relation();
+        DevOpsWorkItem.Attributes attributes = new DevOpsWorkItem.Attributes();
+        relation.rel = "System.LinkTypes.Hierarchy-Reverse";
+        relation.url = $"workItems/{workItem.id}";
+        attributes.isLocked = false;
+        attributes.name = "Parent";
+
+        relation.attributes = attributes;
+        relations.Add(relation);
+
+        tempWorkItem.relations = relations;
+        //tempWorkItem.fields.href = workItem.fields.href;
+        return tempWorkItem;
+    }
+
+    public string Truncate(string variable, int Length)
+    {
+        if (string.IsNullOrEmpty(variable)) return variable;
+        return variable.Length <= Length ? variable : variable.Substring(0, Length);
+    }
+}
+
