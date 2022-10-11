@@ -18,3 +18,6 @@ A normal workflow would look something like this:
 - The user fills out info for a TimeLog project and/or DevOps work item and clicks "Create" 
 - The back-end handles all the request and the front-end displays success or error modals depending on the responses.
 
+The Task Manager fills out most fields using the Freshdesk ticket, so the user doesn't have to fill out everything manually.
+This workflow is a lot faster than accessing three different sites and manually creating the items. 
+
