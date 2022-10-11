@@ -23,4 +23,4 @@ This workflow is a lot faster than accessing three different sites and manually 
 
 Below are a few screenshots of the UI. The UI won't win any awards, but beautiful design wasn't a high priority :) 
 
-[Creating TimeLog projects](/CreateProject.PNG)
+![Creating TimeLog projects](/CreateProject.PNG)
