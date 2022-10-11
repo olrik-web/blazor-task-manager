@@ -27,8 +27,8 @@ Below are a few screenshots of the UI. The UI won't win any awards, but beautifu
 ![Creating TimeLog projects](/CreateProject.PNG)
 
 ### Creating DevOps work items
-![Creating DevOps work items](/CreateWorkItem.PNG)
+![Creating DevOps work items](/CreateWorkItem.png)
 
 ### Creating DevOps work item task
-![Creating DevOps work item task](/CreateTask.PNG)
+![Creating DevOps work item task](/CreateTask.png)
 
