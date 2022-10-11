@@ -21,3 +21,6 @@ A normal workflow would look something like this:
 The Task Manager fills out most fields using the Freshdesk ticket, so the user doesn't have to fill out everything manually.
 This workflow is a lot faster than accessing three different sites and manually creating the items. 
 
+Below are a few screenshots of the UI. The UI won't win any awards, but beautiful design wasn't a high priority :) 
+
+[Creating TimeLog projects](/CreateProject.PNG)
