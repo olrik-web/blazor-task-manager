@@ -1,4 +1,4 @@
-# blazor-task-manager
+# Blazor Task Manager
 
 This project was created using .NET and the Blazor framework. 
 Blazor is a cross platform development framework created by Microsoft, and it gives you the power to code your web application using C# or Razor. 
